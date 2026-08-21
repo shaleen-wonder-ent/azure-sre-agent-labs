@@ -39,10 +39,14 @@ for this phase** — they are discussed separately and their parked assets live 
 | 10 | **Failed deployment investigation** | Identify deployment-related changes, configuration drift, and likely causes of service degradation | Azure **Activity Log** (deployments), Resource Graph, IaC/state comparison, App Insights | [deployment-compliance](labs/deployment-compliance/) · [zava-learning](labs/zava-learning/) (IaC break/fix) | Review |
 | 11 | **Azure cost anomaly detection** | Detect unexpected cost spikes, determine contributing factors, and recommend optimization opportunities | **Cost Management** (cost/usage), Activity Log (scale/create events), Advisor cost recommendations | [zava-learning](labs/zava-learning/) (weekly cost auditor) · [enterprise-operations](labs/enterprise-operations/) (FinOps) | Reader |
 | 12 | **Security incident investigation** | Establish an event timeline, identify impacted assets, and accelerate security investigations | Azure **Activity Log**, **Defender for Cloud** alerts, NSG/firewall changes, public-exposure signals, `SecurityAlert` (KQL) | [public-port-guard](labs/public-port-guard/) · [starter-lab](labs/starter-lab/) (public-exposure auditor) · [deployment-compliance](labs/deployment-compliance/) | Review |
-| 13 | **Multi-subscription operational health overview** | Provide a consolidated view of health, incidents, risks, and recommendations across Azure environments | Resource Graph (cross-sub), Resource Health, Azure Monitor, Advisor, Activity Log — one agent, multiple scopes | [enterprise-operations](labs/enterprise-operations/) (multi-subscription scope) | Reader |
+| 13 | **Multi-subscription operational health overview** | Provide a consolidated view of health, incidents, risks, and recommendations across Azure environments in the same Microsoft Entra tenant | Resource Graph (cross-sub), Resource Health, Azure Monitor, Advisor, Activity Log — one agent, multiple scopes | [enterprise-operations](labs/enterprise-operations/) (multi-subscription scope) | Reader |
 
 > **Scenario 8 uses Microsoft Entra ID** (sign-in / audit logs and Conditional Access), not on-prem
 > Active Directory. Entra diagnostic logs must be routed to a Log Analytics workspace the agent can query.
+>
+> **Scenario 13 is scoped to subscriptions in one Microsoft Entra tenant.** Grant the agent identity
+> read access on each selected subscription. Cross-tenant delegation with Azure Lighthouse is a valid
+> product pattern, but it is intentionally outside this reusable lab's automated scope.
 
 ---
 
@@ -72,6 +76,16 @@ else reuses telemetry and workloads already deployed by the labs above.
 ---
 
 ## Deployment principles (recap)
+
+Preview or deploy a scenario selection from the repository root:
+
+```powershell
+pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios '2,4,7,10' -PlanOnly
+pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios '2,4,7,10'
+```
+
+The launcher uses one canonical lab per scenario, removes duplicate lab deployments, and presents
+scenarios 4, 8, and 13 as guided enterprise steps where tenant-specific input is still required.
 
 - **One agent, many scopes.** The agent's operational reach is set by the Azure RBAC granted to its
   managed identity, not by where the agent resource lives. Start with **Reader** on the target

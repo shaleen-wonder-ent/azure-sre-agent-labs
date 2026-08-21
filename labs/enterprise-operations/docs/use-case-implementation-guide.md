@@ -21,8 +21,8 @@ public-port labs, and enable only the optional modules needed for a workshop.
 - **Azure SQL Managed Instance is required** for an exact SQL MI demonstration in use case 4. It
   should be an opt-in module because it has material cost and provisioning time. The existing
   PostgreSQL performance lane is a valid low-cost substitute for teaching the investigation method.
-- **A second accessible subscription is required** for a genuine multi-subscription demonstration in
-  use case 13. Azure Lighthouse is required only when crossing tenant boundaries.
+- **A second accessible subscription in the same Microsoft Entra tenant is required** for a genuine
+   multi-subscription demonstration in use case 13.
 
 ### Resource classification
 
@@ -757,17 +757,16 @@ change, and cost across authorized subscriptions while making blind spots explic
 
 ### Resource decision
 
-**A second accessible subscription is required for a genuine demonstration.** It may already exist;
-the lab does not need to create a subscription. Deploy at least one representative resource or reuse
-an existing sandbox workload in each subscription. Use Azure Lighthouse only for cross-tenant access.
+**A second accessible subscription in the same Microsoft Entra tenant is required for a genuine
+demonstration.** It may already exist; the lab does not need to create a subscription. Deploy at
+least one representative resource or reuse an existing sandbox workload in each subscription.
 
 ### Implementation steps
 
-1. Select two sandbox subscriptions and document tenant, owner, and escalation boundary for each.
-2. Grant the agent identity Reader, Monitoring Reader, and required workspace access in both.
-3. Grant Cost Management Reader and Security Reader only if those sections are included.
-4. For cross-tenant use, configure Azure Lighthouse delegation and verify the agent tenant/identity
-   model before adding data sources.
+1. Select two same-tenant sandbox subscriptions and document owner and escalation boundary for each.
+2. Verify both subscriptions report the same tenant ID before configuring access.
+3. Grant the agent identity Reader, Monitoring Reader, and required workspace access in both.
+4. Grant Cost Management Reader and Security Reader only if those sections are included.
 5. Export Activity Log and connect required workspaces from each subscription.
 6. Standardize severity, SLO, tags, owner metadata, and stale-data thresholds in knowledge.
 7. Install the fleet-health skill and daily scheduled task.

@@ -78,7 +78,7 @@ Create these once for the scenario pack:
 | Network Watcher and Connection Monitor | Scenario 2 | Enable in the workload region and collect connection tests before injecting faults. |
 | Entra diagnostic settings | Scenario 8 | Route `SignInLogs`, `AuditLogs`, `ServicePrincipalSignInLogs`, and `ManagedIdentitySignInLogs` to the workspace. Tenant permissions are required. |
 | Defender for Cloud / Microsoft Sentinel | Scenario 12 | Optional richer security signal. The base lane can use Activity Log, NSG flow logs, and Defender alerts already available to the tenant. |
-| Second subscription | Scenario 13 | Prefer a second sandbox subscription. Use explicit RBAC; use Azure Lighthouse only for cross-tenant extension. |
+| Second subscription | Scenario 13 | Use a second sandbox subscription in the same Microsoft Entra tenant and grant explicit read-only RBAC. |
 
 ## Access model
 

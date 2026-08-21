@@ -8,6 +8,40 @@ This repository is the official community hub for Azure SRE Agent. Here you'll f
 
 ---
 
+## Deploy the scenario labs
+
+The root PowerShell launcher maps the [13 Azure-native use cases](AZURE-SRE-AGENT-USE-CASES.md)
+to the smallest set of lab packages. It accepts `all` or a comma-separated selection, deduplicates
+shared labs, displays cost and readiness warnings, and requires confirmation before provisioning.
+
+Prerequisites: PowerShell 7, Azure CLI, Azure Developer CLI, Git Bash on Windows, Python 3, an
+Azure subscription, and sufficient permissions to create resources and role assignments.
+
+```powershell
+# Preview only; makes no Azure changes
+pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios '2,4,7,10' -PlanOnly
+
+# Interactive selection and Azure target confirmation
+pwsh ./Deploy-SreAgentLabs.ps1
+
+# Deploy all currently automated labs, then show guided enterprise steps
+pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios all
+```
+
+Scenarios 4, 8, and 13 use the guided `enterprise-operations` overlay. Scenario 13 supports multiple
+subscriptions in the **same Microsoft Entra tenant**; supply at least two IDs when deploying:
+
+```powershell
+pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios 13 `
+	-SubscriptionId '<deployment-subscription-id>' `
+	-TargetSubscriptionIds '<subscription-id-1>','<subscription-id-2>'
+```
+
+The launcher validates that every target subscription belongs to the active tenant. Cross-tenant
+Azure Lighthouse onboarding is intentionally outside this lab's scenario 13 scope.
+
+---
+
 ## Quick Links
 
 | Resource | Link |

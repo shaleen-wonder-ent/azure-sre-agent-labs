@@ -160,7 +160,7 @@ enable_secondary_subscription = true
 secondary_subscription_id      = "00000000-0000-0000-0000-000000000000"
 ```
 
-The module creates one test resource group, grants the agent Reader and Monitoring Reader only on that group, and exports the secondary Activity Log to the primary workspace. Use Azure Lighthouse separately for a cross-tenant subscription.
+The module creates one test resource group, grants the agent Reader and Monitoring Reader only on that group, and exports the secondary Activity Log to the primary workspace. Both subscriptions must belong to the same Microsoft Entra tenant.
 
 ## Network fault exercise
 

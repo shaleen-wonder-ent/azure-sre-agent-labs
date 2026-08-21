@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    { "number": 1, "name": "Application outage root cause analysis", "lab": "starter-lab", "readiness": "deployable" },
+    { "number": 2, "name": "Connectivity diagnostics: hub to spoke to internet", "lab": "zava-learning", "readiness": "deployable" },
+    { "number": 3, "name": "VM and infrastructure incident investigation", "lab": "vm-cosmosdb", "readiness": "deployable" },
+    { "number": 4, "name": "Azure SQL Managed Instance performance analysis", "lab": "enterprise-operations", "readiness": "guided" },
+    { "number": 5, "name": "VM availability report (past 30 days)", "lab": "vm-cosmosdb", "readiness": "deployable" },
+    { "number": 6, "name": "Services or resources added or removed (past week)", "lab": "deployment-compliance", "readiness": "deployable" },
+    { "number": 7, "name": "Show everything changed in last 24 hours", "lab": "deployment-compliance", "readiness": "deployable" },
+    { "number": 8, "name": "Entra authentication troubleshooting", "lab": "enterprise-operations", "readiness": "guided" },
+    { "number": 9, "name": "Capacity exhaustion prediction", "lab": "vm-cosmosdb", "readiness": "deployable" },
+    { "number": 10, "name": "Failed deployment investigation", "lab": "deployment-compliance", "readiness": "deployable" },
+    { "number": 11, "name": "Azure cost anomaly detection", "lab": "zava-learning", "readiness": "deployable" },
+    { "number": 12, "name": "Security incident investigation", "lab": "public-port-guard", "readiness": "deployable" },
+    { "number": 13, "name": "Multi-subscription operational health overview", "lab": "enterprise-operations", "readiness": "guided" }
+  ],
+  "labs": [
+    {
+      "id": "starter-lab",
+      "path": "labs/starter-lab",
+      "azdCommand": "up",
+      "postDeploy": "bash:scripts/post-provision.sh",
+      "warning": "Deploys Container Apps, Container Registry, Log Analytics, Application Insights, and an SRE Agent."
+    },
+    {
+      "id": "zava-learning",
+      "path": "labs/zava-learning",
+      "azdCommand": "up",
+      "postDeploy": "zava",
+      "warning": "Deploys Application Gateway, Container Apps, PostgreSQL, a VM, and an SRE Agent; PostgreSQL is deployed in westus3. Final agent configuration currently requires portal steps."
+    },
+    {
+      "id": "vm-cosmosdb",
+      "path": "labs/vm-cosmosdb",
+      "azdCommand": "up",
+      "postDeploy": "bash:scripts/post-deploy.sh",
+      "warning": "Deploys Linux VMs, Cosmos DB, monitoring resources, and an SRE Agent."
+    },
+    {
+      "id": "deployment-compliance",
+      "path": "labs/deployment-compliance",
+      "azdCommand": "up",
+      "postDeploy": "bash:scripts/post-deploy.sh",
+      "warning": "Deploys Container Apps, Container Registry, Azure SQL Database, monitoring resources, and an SRE Agent."
+    },
+    {
+      "id": "public-port-guard",
+      "path": "labs/public-port-guard",
+      "azdCommand": "provision",
+      "postDeploy": "pwsh:scripts/configure-agent.ps1",
+      "warning": "Deploys two Linux VMs, monitoring resources, and an SRE Agent."
+    },
+    {
+      "id": "enterprise-operations",
+      "path": "labs/enterprise-operations",
+      "dependsOn": ["zava-learning"],
+      "azdCommand": null,
+      "postDeploy": "guided",
+      "warning": "Optional Terraform overlay. SQL MI is expensive and slow to provision; Entra diagnostics require tenant permissions; scenario 13 requires at least two subscriptions in the same tenant."
+    }
+  ]
+}
