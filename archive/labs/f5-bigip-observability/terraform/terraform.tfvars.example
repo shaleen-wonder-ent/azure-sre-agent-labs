@@ -1,0 +1,6 @@
+subscription_id      = "00000000-0000-0000-0000-000000000000"
+management_cidr      = "203.0.113.10/32"
+admin_ssh_public_key = "ssh-ed25519 REPLACE_WITH_YOUR_PUBLIC_KEY"
+
+# Revalidate this image version in Central India before deployment.
+bigip_image_version = "21.0.001000"

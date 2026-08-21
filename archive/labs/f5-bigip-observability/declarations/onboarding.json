@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.47.0",
+  "class": "Device",
+  "async": true,
+  "Common": {
+    "class": "Tenant",
+    "hostname": "f5-observability-lab.local",
+    "labProvisioning": {
+      "class": "Provision",
+      "ltm": "nominal",
+      "asm": "nominal"
+    }
+  }
+}

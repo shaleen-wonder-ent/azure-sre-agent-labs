@@ -1,0 +1,13 @@
+F5Telemetry_CL
+| where TimeGenerated > ago(2h)
+| extend Payload = tostring(pack_all())
+| where Payload has_any ("request_logging", "response_logging", "ASM", "attack_type", "violations")
+| project TimeGenerated,
+          Category = tostring(column_ifexists("telemetryEventCategory_s", "unknown")),
+          Hostname = tostring(column_ifexists("hostname_s", "")),
+          ClientIp = tostring(column_ifexists("client_ip_s", column_ifexists("ip_client_s", ""))),
+          Method = tostring(column_ifexists("http_method_s", column_ifexists("method_s", ""))),
+          Uri = tostring(column_ifexists("http_uri_s", column_ifexists("uri_s", ""))),
+          Status = tostring(column_ifexists("http_statcode_s", column_ifexists("request_status_s", ""))),
+          Violations = tostring(column_ifexists("violations_s", ""))
+| order by TimeGenerated desc

@@ -1,0 +1,32 @@
+zava_resource_group_name          = "rg-zava-learning-dev"
+zava_virtual_network_name         = "vnet-zava-learning-dev"
+zava_log_analytics_workspace_name = "log-zava-learning-dev"
+zava_application_insights_name    = "appi-zava-learning-dev"
+zava_application_gateway_name     = "agw-zava-learning-dev"
+admin_ssh_public_key               = "ssh-ed25519 AAAA... user@example"
+
+subscription_id      = null
+zava_subscription_id = null
+location             = "centralindia"
+environment          = "lab"
+name_prefix          = "sre-eops"
+
+notification_email_addresses = {
+  operations = "operations@example.com"
+}
+
+# Optional exact-scenario modules.
+enable_sql_managed_instance  = false
+sqlmi_administrator_password = null
+
+enable_entra_diagnostics = false
+
+enable_secondary_subscription = false
+secondary_subscription_id      = null
+
+# Optional read scopes.
+enable_cost_management_reader = false
+enable_security_reader        = false
+
+# Add only reviewed role definition resource IDs for approved write scenarios.
+remediation_role_definition_ids = []

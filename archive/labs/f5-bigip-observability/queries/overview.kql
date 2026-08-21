@@ -1,0 +1,5 @@
+F5Telemetry_CL
+| where TimeGenerated > ago(2h)
+| extend Category = tostring(column_ifexists("telemetryEventCategory_s", "unknown"))
+| summarize Events = count(), LastSeen = max(TimeGenerated) by Category
+| order by Events desc

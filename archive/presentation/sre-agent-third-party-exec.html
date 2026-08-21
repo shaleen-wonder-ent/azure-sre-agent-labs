@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Azure SRE Agent &amp; Your Third-Party Tools — Executive Brief</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: rgba(255, 255, 255, 0.045);
+    --panel-brd: rgba(255, 255, 255, 0.10);
+    --ink: #eef1f8;
+    --ink-soft: #b3bcd6;
+    --ink-dim: #828cab;
+    --azure: #38bdf8;
+    --azure-2: #2563eb;
+    --violet: #a78bfa;
+    --teal: #2dd4bf;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --green: #34d399;
+    --shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1100px 640px at 10% -10%, rgba(37, 99, 235, 0.30), transparent 60%),
+      radial-gradient(950px 560px at 100% 0%, rgba(167, 139, 250, 0.22), transparent 55%),
+      radial-gradient(900px 700px at 50% 120%, rgba(45, 212, 191, 0.14), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 44px 24px 80px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    border: 1px solid var(--panel-brd);
+    border-radius: 24px;
+    padding: 40px 38px;
+    background: linear-gradient(140deg, rgba(56, 189, 248, 0.16), rgba(167, 139, 250, 0.10) 45%, rgba(45, 212, 191, 0.08));
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(600px 300px at 85% 0%, #000, transparent 70%);
+    pointer-events: none;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--azure); font-weight: 700;
+    padding: 7px 14px; border: 1px solid rgba(56,189,248,0.35);
+    border-radius: 999px; background: rgba(56,189,248,0.08);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal);
+    box-shadow: 0 0 0 4px rgba(45,212,191,0.18); animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1);} 50% { opacity: 0.5; transform: scale(0.8);} }
+  h1 { font-size: clamp(28px, 4.6vw, 44px); line-height: 1.08; margin: 20px 0 14px; letter-spacing: -0.01em; }
+  h1 .grad { background: linear-gradient(92deg, var(--azure), var(--violet) 55%, var(--teal));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { max-width: 680px; color: var(--ink-soft); font-size: 17px; margin: 0; }
+
+  /* ---------- Section head ---------- */
+  section { margin-top: 40px; }
+  .sec-head { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+  .sec-num {
+    flex: none; width: 38px; height: 38px; display: grid; place-items: center;
+    border-radius: 11px; font-weight: 800; font-size: 16px; color: #06121f;
+    background: linear-gradient(135deg, var(--azure), var(--azure-2));
+    box-shadow: 0 8px 22px rgba(37,99,235,0.35);
+  }
+  .sec-num.violet { background: linear-gradient(135deg, var(--violet), #7c3aed); }
+  .sec-num.teal { background: linear-gradient(135deg, var(--teal), #0d9488); }
+  .sec-head h2 { margin: 0; font-size: clamp(20px, 2.6vw, 26px); letter-spacing: -0.01em; }
+  .sec-head p { margin: 3px 0 0; color: var(--ink-dim); font-size: 14px; }
+
+  /* ---------- Myth vs Reality ---------- */
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .vs .box { border: 1px solid var(--panel-brd); border-radius: 16px; padding: 22px; background: var(--panel); }
+  .vs .myth { border-left: 3px solid var(--rose); }
+  .vs .reality { border-left: 3px solid var(--green); }
+  .vs .label { font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; }
+  .vs .myth .label { color: var(--rose); }
+  .vs .reality .label { color: var(--green); }
+  .vs h3 { margin: 8px 0 6px; font-size: 17px; }
+  .vs p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+
+  /* ---------- Coverage bar ---------- */
+  .coverage {
+    border: 1px solid var(--panel-brd); border-radius: 18px; padding: 26px;
+    background: var(--panel);
+  }
+  .cov-bar {
+    display: flex; height: 60px; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--panel-brd);
+  }
+  .cov-native, .cov-third {
+    display: grid; place-items: center; text-align: center; color: #06121f;
+    font-weight: 800; letter-spacing: 0.02em;
+    transform: scaleX(0); transform-origin: left center;
+  }
+  .cov-native {
+    flex: 0 0 90%;
+    background: linear-gradient(120deg, var(--azure), var(--azure-2));
+  }
+  .cov-third {
+    flex: 0 0 10%; color: var(--ink); transform-origin: right center;
+    background: linear-gradient(120deg, rgba(251,113,133,0.45), rgba(251,113,133,0.25));
+  }
+  .cov-native .big, .cov-third .big { font-size: 19px; display: block; line-height: 1; }
+  .cov-native .sm, .cov-third .sm { font-size: 11px; font-weight: 600; opacity: 0.85; }
+  .is-visible .cov-native { animation: growLeft 1s cubic-bezier(0.22,1,0.36,1) both 0.2s; }
+  .is-visible .cov-third { animation: growRight 0.9s cubic-bezier(0.22,1,0.36,1) both 0.9s; }
+  @keyframes growLeft { to { transform: scaleX(1); } }
+  @keyframes growRight { to { transform: scaleX(1); } }
+  .cov-legend { display: flex; gap: 22px; margin-top: 16px; flex-wrap: wrap; }
+  .cov-legend span { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .swatch.azure { background: var(--azure); }
+  .swatch.third { background: rgba(251,113,133,0.55); }
+
+  /* ---------- Steps ---------- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .step {
+    position: relative; border: 1px solid var(--panel-brd); border-radius: 16px;
+    padding: 22px 20px; background: var(--panel); overflow: hidden;
+  }
+  .step .n {
+    width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px;
+    font-weight: 800; font-size: 15px; margin-bottom: 12px;
+    color: var(--azure); background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.28);
+  }
+  .step:nth-child(2) .n { color: var(--teal); background: rgba(45,212,191,0.12); border-color: rgba(45,212,191,0.28); }
+  .step:nth-child(3) .n { color: var(--violet); background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.28); }
+  .step h4 { margin: 0 0 6px; font-size: 15.5px; }
+  .step p { margin: 0; color: var(--ink-soft); font-size: 13.6px; }
+
+  /* ---------- Table ---------- */
+  .tbl-wrap {
+    border: 1px solid var(--panel-brd); border-radius: 18px; overflow: hidden; background: var(--panel);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    text-align: left; padding: 14px 18px; font-size: 11.5px; letter-spacing: 0.08em;
+    text-transform: uppercase; background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--panel-brd);
+  }
+  thead th.you { color: var(--azure); }
+  thead th.agent { color: var(--teal); }
+  tbody td {
+    padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: top; color: var(--ink-soft); font-size: 13.6px;
+  }
+  tbody td.you { color: var(--ink); font-weight: 600; width: 44%; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(56,189,248,0.05); }
+
+  /* ---------- Bottom line ---------- */
+  .bottom {
+    border: 1px solid rgba(56,189,248,0.35); border-radius: 18px; padding: 26px 28px;
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(37,99,235,0.06));
+  }
+  .bottom h3 { margin: 0 0 8px; font-size: 19px; }
+  .bottom p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+  .bottom .accent { color: var(--azure); font-weight: 700; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .chip { font-size: 12.5px; color: var(--ink-soft); padding: 7px 13px;
+    border: 1px solid var(--panel-brd); border-radius: 999px; background: var(--panel); }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  footer {
+    margin-top: 54px; padding-top: 20px; border-top: 1px solid var(--panel-brd);
+    color: var(--ink-dim); font-size: 12.5px;
+  }
+
+  /* ---------- Animations ---------- */
+  @keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes heroIn { from { opacity: 0; transform: translateY(14px) scale(0.99);} to { opacity: 1; transform: translateY(0) scale(1);} }
+  .hero { animation: heroIn 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+  .hero .eyebrow { animation: rise 0.6s ease both 0.15s; }
+  .hero h1 { animation: rise 0.6s ease both 0.28s; }
+  .hero .lede { animation: rise 0.6s ease both 0.42s; }
+
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22,1,0.36,1); }
+  .reveal.is-visible { opacity: 1; transform: none; }
+  .reveal.is-visible .box,
+  .reveal.is-visible .step { animation: rise 0.55s ease both; }
+  .reveal.is-visible .box:nth-child(2),
+  .reveal.is-visible .step:nth-child(2) { animation-delay: 0.12s; }
+  .reveal.is-visible .step:nth-child(3) { animation-delay: 0.24s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero, .hero *, .reveal, .reveal *, .dot,
+    .cov-native, .cov-third { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .cov-native, .cov-third { transform: scaleX(1) !important; }
+  }
+
+  @media (max-width: 760px) {
+    .vs, .steps { grid-template-columns: 1fr; }
+    .cov-native .sm, .cov-third .sm { display: none; }
+    .tbl-wrap { overflow-x: auto; }
+    table { min-width: 520px; }
+  }
+
+  @media print {
+    body { background: #fff; color: #111; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .cov-native, .cov-third { transform: scaleX(1) !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="eyebrow"><span class="dot"></span>Executive Brief · Azure SRE Agent</span>
+    <h1>Third-party tools?<br><span class="grad">Not a blocker.</span></h1>
+    <p class="lede">
+      Having F5, Palo Alto, or other third-party platforms does <b>not</b> rule out Azure SRE Agent.
+      The agent covers your Azure estate natively today, and — where the vendor supports it —
+      can be configured to work across those third-party boundaries too.
+    </p>
+  </header>
+
+  <!-- MYTH vs REALITY -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">1</div>
+      <div>
+        <h2>The concern &amp; the reality</h2>
+        <p>Where SRE Agent fits when third-party tools are part of the picture.</p>
+      </div>
+    </div>
+    <div class="vs">
+      <div class="box myth">
+        <div class="label">A fair question</div>
+        <h3>"We've invested in F5 &amp; Palo Alto — where does SRE Agent fit?"</h3>
+        <p>A natural concern is whether an Azure-focused agent can add value in an estate that also relies on third-party platforms.</p>
+      </div>
+      <div class="box reality">
+        <div class="label">The reality</div>
+        <h3>Most of your estate is Azure-native — and fully covered.</h3>
+        <p>The agent delivers value on the Azure side immediately, and reaches into third-party tools when they expose a supported interface.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COVERAGE -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num teal">2</div>
+      <div>
+        <h2>Where the value lands</h2>
+        <p>Native coverage first; third-party reach when supported and configured.</p>
+      </div>
+    </div>
+    <div class="coverage">
+      <div class="cov-bar">
+        <div class="cov-native">
+          <div><span class="big">~90% native Azure</span><span class="sm">Covered today — no extra work</span></div>
+        </div>
+        <div class="cov-third">
+          <div><span class="big">3rd-party</span><span class="sm">Reachable when supported</span></div>
+        </div>
+      </div>
+      <div class="cov-legend">
+        <span><span class="swatch azure"></span> Azure-native: VMs, networking, Load Balancer, App Gateway, Monitor, deployments, health</span>
+        <span><span class="swatch third"></span> Third-party: F5 / Palo Alto — via logs, APIs, or a governed connector</span>
+      </div>
+    </div>
+    <p style="color: var(--ink-dim); font-size: 13px; margin: 12px 2px 0;">
+      Illustrative split — exact proportions vary by estate. The point: the third-party portion is the minority, and even that is not off-limits.
+    </p>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num violet">3</div>
+      <div>
+        <h2>How it works with F5 &amp; Palo Alto</h2>
+        <p>Three levels of collaboration — pick what the vendor supports and what you're comfortable enabling.</p>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <h4>Observe</h4>
+        <p>Send F5 / Palo Alto logs into Azure. The agent correlates them with Azure signals during an investigation.</p>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <h4>Interact</h4>
+        <p>Connect a supported vendor API or MCP connector so the agent can inspect live policy, topology, and health.</p>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <h4>Act — safely</h4>
+        <p>Approved, allow-listed actions run through a governed bridge with review, audit, and rollback.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT YOU DO / HOW SRE AGENT HELPS -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">4</div>
+      <div>
+        <h2>What you already do — and how SRE Agent helps</h2>
+        <p>Your third-party practices stay in place. The agent works alongside them.</p>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="you">What you already do with F5 / Palo Alto</th>
+            <th class="agent">How Azure SRE Agent helps</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="you">Send firewall &amp; load-balancer logs to a monitoring platform</td>
+            <td>Correlates those logs with Azure metrics, app errors, and health to speed up root-cause analysis.</td>
+          </tr>
+          <tr>
+            <td class="you">Manage security policy in Panorama / Strata and traffic on BIG-IP</td>
+            <td>Reads live policy and topology through a supported API so investigations use current state, not guesswork.</td>
+          </tr>
+          <tr>
+            <td class="you">Run health checks on firewalls, virtual servers, and pool members</td>
+            <td>Verifies live operational state and flags unhealthy members or capacity pressure during an incident.</td>
+          </tr>
+          <tr>
+            <td class="you">Track configuration changes &amp; approvals in your own process</td>
+            <td>Attributes changes on a timeline and points to what shifted before an issue appeared.</td>
+          </tr>
+          <tr>
+            <td class="you">Keep remediation gated behind your controls</td>
+            <td>Executes only narrow, allow-listed actions through a governed bridge — with approval, audit, and rollback.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color: var(--ink-dim); font-size: 12.5px; margin: 12px 2px 0;">
+      Third-party interaction depends on the vendor exposing a supported interface and on your team enabling it.
+    </p>
+  </section>
+
+  <!-- BOTTOM LINE -->
+  <section>
+    <div class="bottom">
+      <h3>Bottom line</h3>
+      <p>
+        You keep your third-party tools. Azure SRE Agent adds <span class="accent">immediate value across your Azure-native estate</span>,
+        and — where F5, Palo Alto, or others expose a supported interface — it can be <span class="accent">configured to collaborate across that boundary too</span>.
+        It's not all-or-nothing; it's native now, and broader as you enable it.
+      </p>
+      <div class="chips">
+        <span class="chip"><b>Native</b> · value from day one</span>
+        <span class="chip"><b>Configurable</b> · reaches third-party tools</span>
+        <span class="chip"><b>Governed</b> · approvals &amp; audit for any change</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Azure SRE Agent · Executive brief — working alongside third-party platforms (F5 &amp; Palo Alto)
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sections = document.querySelectorAll('section');
+    if (prefersReduced || !('IntersectionObserver' in window)) {
+      sections.forEach(function (s) { s.classList.add('is-visible'); });
+      return;
+    }
+    sections.forEach(function (s) { s.classList.add('reveal'); });
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+    sections.forEach(function (s) { observer.observe(s); });
+  })();
+</script>
+</body>
+</html>

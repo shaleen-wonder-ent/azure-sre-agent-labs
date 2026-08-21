@@ -1,0 +1,35 @@
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Desktop.ini
+samples/deployment-compliance/skills/.DS_Store
+
+# Local Azure Developer CLI and editor state
+.azure/
+.vscode/
+
+# Dependencies & build caches
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+bin/obj/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Secrets & local env
+*.env
+.env
+!*.env.example
+!*.env.sample

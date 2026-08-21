@@ -1,0 +1,8 @@
+F5Telemetry_CL
+| where TimeGenerated > ago(2h)
+| extend Payload = tostring(pack_all())
+| where Payload has_any ("web_pool", "monitorStatus", "availabilityState", "user-disabled")
+| project TimeGenerated,
+          Category = tostring(column_ifexists("telemetryEventCategory_s", "unknown")),
+          Payload
+| order by TimeGenerated desc

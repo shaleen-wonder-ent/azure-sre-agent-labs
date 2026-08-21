@@ -1,0 +1,34 @@
+{
+  "class": "Telemetry",
+  "schemaVersion": "1.41.0",
+  "controls": {
+    "class": "Controls",
+    "logLevel": "info",
+    "memoryMonitor": {
+      "interval": "default",
+      "memoryThresholdPercent": 80,
+      "thresholdReleasePercent": 85
+    }
+  },
+  "Lab_System": {
+    "class": "Telemetry_System",
+    "systemPoller": {
+      "interval": 60,
+      "workers": 2,
+      "chunkSize": 20
+    }
+  },
+  "Lab_Event_Listener": {
+    "class": "Telemetry_Listener",
+    "port": 6514,
+    "trace": false
+  },
+  "Azure_Log_Analytics": {
+    "class": "Telemetry_Consumer",
+    "type": "Azure_Log_Analytics",
+    "workspaceId": "__WORKSPACE_ID__",
+    "useManagedIdentity": true,
+    "region": "__AZURE_REGION__",
+    "format": "propertyBasedV2"
+  }
+}

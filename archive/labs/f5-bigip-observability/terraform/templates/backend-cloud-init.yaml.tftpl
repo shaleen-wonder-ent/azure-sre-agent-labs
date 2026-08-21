@@ -1,0 +1,29 @@
+#cloud-config
+write_files:
+  - path: /opt/f5-backend/index.html
+    permissions: "0644"
+    content: |
+      <!doctype html>
+      <html lang="en">
+      <head><meta charset="utf-8"><title>${node_name}</title></head>
+      <body><h1>${node_name}</h1><p>Private address: ${private_ip}</p></body>
+      </html>
+  - path: /etc/systemd/system/f5-backend.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=F5 observability lab backend
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/python3 -m http.server 80 --directory /opt/f5-backend
+      Restart=on-failure
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+runcmd:
+  - [systemctl, daemon-reload]
+  - [systemctl, enable, --now, f5-backend.service]

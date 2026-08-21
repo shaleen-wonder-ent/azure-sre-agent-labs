@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Azure SRE Agent · Third-Party Platforms (Palo Alto &amp; F5)</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --bg-2: #0e1530;
+    --panel: rgba(255, 255, 255, 0.04);
+    --panel-brd: rgba(255, 255, 255, 0.10);
+    --ink: #e8ecf6;
+    --ink-soft: #aab3cc;
+    --ink-dim: #7f89a6;
+    --azure: #38bdf8;
+    --azure-2: #2563eb;
+    --violet: #a78bfa;
+    --teal: #2dd4bf;
+    --amber: #fbbf24;
+    --rose: #fb7185;
+    --green: #34d399;
+    --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 700px at 12% -10%, rgba(37, 99, 235, 0.28), transparent 60%),
+      radial-gradient(1000px 600px at 100% 0%, rgba(167, 139, 250, 0.22), transparent 55%),
+      radial-gradient(900px 700px at 50% 120%, rgba(45, 212, 191, 0.14), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.55;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 26px 90px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    border: 1px solid var(--panel-brd);
+    border-radius: 26px;
+    padding: 42px 40px;
+    background:
+      linear-gradient(140deg, rgba(56, 189, 248, 0.14), rgba(167, 139, 250, 0.10) 45%, rgba(45, 212, 191, 0.08));
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(600px 300px at 80% 0%, #000, transparent 70%);
+    pointer-events: none;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--azure);
+    font-weight: 700;
+    padding: 7px 14px;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.08);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.18);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  h1 {
+    font-size: clamp(28px, 4.4vw, 46px);
+    line-height: 1.08;
+    margin: 20px 0 12px;
+    letter-spacing: -0.01em;
+  }
+  h1 .grad {
+    background: linear-gradient(92deg, var(--azure), var(--violet) 55%, var(--teal));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .lede {
+    max-width: 760px;
+    color: var(--ink-soft);
+    font-size: 17px;
+    margin: 0;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .chip {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    padding: 7px 13px;
+    border: 1px solid var(--panel-brd);
+    border-radius: 999px;
+    background: var(--panel);
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Section scaffolding ---------- */
+  section { margin-top: 46px; scroll-margin-top: 20px; }
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .sec-num {
+    flex: none;
+    width: 40px; height: 40px;
+    display: grid; place-items: center;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 17px;
+    color: #06121f;
+    background: linear-gradient(135deg, var(--azure), var(--azure-2));
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.35);
+  }
+  .sec-num.violet { background: linear-gradient(135deg, var(--violet), #7c3aed); box-shadow: 0 8px 22px rgba(124,58,237,0.35);}
+  .sec-num.teal { background: linear-gradient(135deg, var(--teal), #0d9488); box-shadow: 0 8px 22px rgba(13,148,136,0.35);}
+  .sec-head h2 {
+    margin: 0;
+    font-size: clamp(21px, 2.6vw, 28px);
+    letter-spacing: -0.01em;
+  }
+  .sec-head p { margin: 3px 0 0; color: var(--ink-dim); font-size: 14px; }
+
+  /* ---------- Boundary banner ---------- */
+  .banner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 18px;
+    align-items: stretch;
+    border: 1px solid var(--panel-brd);
+    border-radius: var(--radius);
+    padding: 22px;
+    background: var(--panel);
+  }
+  .banner .side {
+    border-radius: 14px;
+    padding: 18px;
+    border: 1px solid var(--panel-brd);
+  }
+  .banner .azure-side { background: linear-gradient(160deg, rgba(56,189,248,0.14), transparent); }
+  .banner .vendor-side { background: linear-gradient(160deg, rgba(251,113,133,0.12), transparent); }
+  .banner .divider {
+    display: grid;
+    place-items: center;
+    color: var(--ink-dim);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    position: relative;
+  }
+  .banner .divider span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    padding: 10px 0;
+    border-left: 1px dashed var(--panel-brd);
+  }
+  .banner h3 { margin: 0 0 8px; font-size: 15px; }
+  .banner .azure-side h3 { color: var(--azure); }
+  .banner .vendor-side h3 { color: var(--rose); }
+  .banner ul { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 13.5px; }
+  .banner li { margin: 5px 0; }
+
+  /* ---------- Cards ---------- */
+  .grid { display: grid; gap: 16px; }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card {
+    border: 1px solid var(--panel-brd);
+    border-radius: var(--radius);
+    padding: 20px;
+    background: var(--panel);
+    position: relative;
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  }
+  .card .icn {
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border-radius: 11px;
+    font-size: 20px;
+    margin-bottom: 12px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+  }
+  .card.k-native .icn { background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.3);}
+  .card.k-log .icn { background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.32);}
+  .card.k-expose .icn { background: rgba(45,212,191,0.14); border-color: rgba(45,212,191,0.32);}
+  .card h3 { margin: 0 0 6px; font-size: 15.5px; }
+  .card p { margin: 0; color: var(--ink-soft); font-size: 13.6px; }
+  .card ul { margin: 10px 0 0; padding-left: 17px; color: var(--ink-soft); font-size: 13.4px; }
+  .card li { margin: 5px 0; }
+
+  .tag {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 999px;
+  }
+  .tag.free { color: var(--green); background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); }
+  .tag.logs { color: var(--violet); background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.3); }
+  .tag.build { color: var(--teal); background: rgba(45,212,191,0.12); border: 1px solid rgba(45,212,191,0.3); }
+
+  /* ---------- Note ---------- */
+  .note {
+    margin-top: 16px;
+    border-left: 3px solid var(--amber);
+    background: rgba(251, 191, 36, 0.08);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px;
+    color: var(--ink-soft);
+    font-size: 13.8px;
+  }
+  .note b { color: var(--amber); }
+  .note.rule { border-left-color: var(--azure); background: rgba(56,189,248,0.08); }
+  .note.rule b { color: var(--azure); }
+
+  /* ---------- Table ---------- */
+  .tbl-wrap {
+    border: 1px solid var(--panel-brd);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--panel);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.6px; }
+  thead th {
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--panel-brd);
+  }
+  tbody td {
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: top;
+    color: var(--ink-soft);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(56, 189, 248, 0.05); }
+  td .cap { color: var(--ink); font-weight: 600; }
+  .ex { color: var(--ink-dim); font-size: 12.8px; }
+
+  /* ---------- Maturity flow ---------- */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    counter-reset: step;
+  }
+  .step {
+    position: relative;
+    border: 1px solid var(--panel-brd);
+    border-radius: var(--radius);
+    padding: 20px 18px 18px;
+    background: var(--panel);
+    overflow: hidden;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    top: -14px; right: -6px;
+    font-size: 74px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.05);
+    line-height: 1;
+  }
+  .step .lvl {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--azure);
+  }
+  .step:nth-child(2) .lvl { color: var(--violet); }
+  .step:nth-child(3) .lvl { color: var(--teal); }
+  .step:nth-child(4) .lvl { color: var(--amber); }
+  .step h4 { margin: 8px 0 6px; font-size: 15px; }
+  .step p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+  .step .bar {
+    height: 5px;
+    border-radius: 999px;
+    margin-top: 14px;
+    background: linear-gradient(90deg, var(--azure), var(--violet), var(--teal), var(--amber));
+    opacity: 0.85;
+  }
+  .step:nth-child(1) .bar { width: 25%; }
+  .step:nth-child(2) .bar { width: 50%; }
+  .step:nth-child(3) .bar { width: 75%; }
+  .step:nth-child(4) .bar { width: 100%; }
+
+  /* ---------- Diagram ---------- */
+  .diagram {
+    border: 1px solid var(--panel-brd);
+    border-radius: var(--radius);
+    padding: 26px;
+    background:
+      radial-gradient(600px 300px at 50% -20%, rgba(56,189,248,0.10), transparent 60%),
+      var(--panel);
+  }
+  .diagram-row {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 18px;
+    align-items: center;
+  }
+  .node {
+    border: 1px solid var(--panel-brd);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+  }
+  .node .t { font-weight: 700; font-size: 14px; }
+  .node .s { font-size: 12px; color: var(--ink-dim); margin-top: 3px; }
+  .node.agent {
+    background: linear-gradient(150deg, rgba(56,189,248,0.18), rgba(37,99,235,0.10));
+    border-color: rgba(56,189,248,0.4);
+  }
+  .node.vendor {
+    background: linear-gradient(150deg, rgba(251,113,133,0.14), transparent);
+    border-color: rgba(251,113,133,0.35);
+  }
+  .paths { display: grid; gap: 10px; }
+  .path {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12.5px; color: var(--ink-soft);
+    padding: 9px 12px;
+    border: 1px dashed var(--panel-brd);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+  }
+  .path .arrow { color: var(--azure); font-weight: 800; }
+  .path.mcp .arrow { color: var(--teal); }
+  .path.bridge .arrow { color: var(--violet); }
+
+  .connection-intro {
+    margin: 0 0 18px;
+    color: var(--ink-soft);
+    font-size: 13.8px;
+  }
+  .connection-lanes { display: grid; gap: 12px; }
+  .connection-lane {
+    display: grid;
+    grid-template-columns: 150px minmax(210px, 0.9fr) minmax(300px, 1.6fr);
+    gap: 18px;
+    align-items: center;
+    padding: 17px 18px;
+    border: 1px solid var(--panel-brd);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.025);
+  }
+  .connection-lane.logs { border-left: 3px solid var(--violet); }
+  .connection-lane.mcp { border-left: 3px solid var(--teal); }
+  .connection-lane.bridge { border-left: 3px solid var(--amber); }
+  .connection-kind .num {
+    display: block;
+    color: var(--ink-dim);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .connection-kind strong { display: block; margin-top: 3px; font-size: 14px; }
+  .connection-flow {
+    color: var(--ink);
+    font-size: 12.8px;
+    font-weight: 600;
+  }
+  .connection-flow .arrow { color: var(--azure); padding: 0 5px; }
+  .connection-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .connection-detail span {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--ink-dim);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .connection-detail p { margin: 0; color: var(--ink-soft); font-size: 12.5px; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    margin-top: 60px;
+    padding-top: 22px;
+    border-top: 1px solid var(--panel-brd);
+    color: var(--ink-dim);
+    font-size: 12.5px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  footer a { color: var(--azure); text-decoration: none; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .cols-3, .flow { grid-template-columns: 1fr 1fr; }
+    .banner { grid-template-columns: 1fr; }
+    .banner .divider span { writing-mode: horizontal-tb; transform: none; border-left: none; border-top: 1px dashed var(--panel-brd); padding: 8px 0; }
+    .diagram-row { grid-template-columns: 1fr; }
+    .connection-lane { grid-template-columns: 130px 1fr; }
+    .connection-detail { grid-column: 1 / -1; }
+  }
+  @media (max-width: 620px) {
+    .cols-3, .cols-2, .flow { grid-template-columns: 1fr; }
+    .wrap { padding: 26px 16px 70px; }
+    .hero { padding: 30px 22px; }
+    .connection-lane, .connection-detail { grid-template-columns: 1fr; }
+    .connection-detail { gap: 10px; }
+  }
+
+  /* print / PDF */
+  @media print {
+    body { background: #fff; color: #111; }
+    .card:hover { transform: none; box-shadow: none; }
+    .hero, .card, .tbl-wrap, .step, .diagram, .banner { break-inside: avoid; }
+  }
+
+  /* ---------- Animations ---------- */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes heroIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.99); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes flowArrow {
+    0%, 100% { transform: translateX(0); opacity: 0.65; }
+    50%      { transform: translateX(4px); opacity: 1; }
+  }
+  @keyframes barGrow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  /* Hero animates in on load */
+  .hero { animation: heroIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hero .eyebrow { animation: rise 0.6s ease both 0.15s; }
+  .hero h1 { animation: rise 0.6s ease both 0.25s; }
+  .hero .lede { animation: rise 0.6s ease both 0.35s; }
+  .hero .hero-meta { animation: rise 0.6s ease both 0.45s; }
+
+  /* Scroll-reveal for sections */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .reveal.is-visible { opacity: 1; transform: none; }
+
+  /* Stagger children inside a revealed container */
+  .reveal.is-visible .card,
+  .reveal.is-visible .step,
+  .reveal.is-visible .connection-lane { animation: rise 0.55s ease both; }
+  .reveal.is-visible .card:nth-child(2),
+  .reveal.is-visible .step:nth-child(2),
+  .reveal.is-visible .connection-lane:nth-child(2) { animation-delay: 0.1s; }
+  .reveal.is-visible .card:nth-child(3),
+  .reveal.is-visible .step:nth-child(3),
+  .reveal.is-visible .connection-lane:nth-child(3) { animation-delay: 0.2s; }
+  .reveal.is-visible .step:nth-child(4) { animation-delay: 0.3s; }
+
+  /* Animated flow arrows */
+  .connection-flow .arrow { display: inline-block; animation: flowArrow 1.8s ease-in-out infinite; }
+  .connection-lane.mcp .connection-flow .arrow { animation-delay: 0.2s; }
+  .connection-lane.bridge .connection-flow .arrow { animation-delay: 0.4s; }
+
+  /* Maturity bars grow when revealed */
+  .step .bar { transform-origin: left center; }
+  .reveal.is-visible .step .bar { animation: barGrow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both 0.3s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero, .hero *, .reveal, .reveal * { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .connection-flow .arrow { animation: none !important; }
+    .dot { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="eyebrow"><span class="dot"></span>Azure SRE Agent · Companion</span>
+    <h1>Working across the boundary:<br><span class="grad">Palo Alto, F5 &amp; other third-party platforms</span></h1>
+    <p class="lede">
+      Azure SRE Agent is hosted in Azure, but it is <b>not limited to Azure-native data</b>.
+      How far it can help with a third-party platform depends on the telemetry and
+      operational interfaces that platform exposes to the agent.
+    </p>
+    <div class="hero-meta">
+      <span class="chip"><b>Native</b> · Azure-side investigation</span>
+      <span class="chip"><b>Logs</b> · Correlate vendor telemetry</span>
+      <span class="chip"><b>Expose</b> · APIs, MCP, controlled actions</span>
+      <span class="chip">Status · <b>Generally Available</b></span>
+    </div>
+  </header>
+
+  <!-- BOUNDARY BANNER -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">◎</div>
+      <div>
+        <h2>Where the agent's reach ends today</h2>
+        <p>Native visibility stops at the third-party boundary until you connect telemetry or an API.</p>
+      </div>
+    </div>
+    <div class="banner">
+      <div class="side azure-side">
+        <h3>✔ Azure side — visible now</h3>
+        <ul>
+          <li>VMs, NICs, VNets, NSGs, routes, DNS</li>
+          <li>Load Balancer, App Gateway, Azure Firewall, Private Link</li>
+          <li>Azure Monitor, Log Analytics, App Insights, Activity Log</li>
+          <li>Deployments, resource health, change attribution</li>
+        </ul>
+      </div>
+      <div class="divider"><span>Boundary</span></div>
+      <div class="side vendor-side">
+        <h3>✱ Inside Palo Alto / F5 — needs a connection</h3>
+        <ul>
+          <li>Live firewall policy &amp; security rules</li>
+          <li>F5 virtual servers, pools, members, monitors</li>
+          <li>Session, threat, and traffic-management state</li>
+          <li>Vendor configuration history &amp; diagnostics</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1 · NATIVE -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">1</div>
+      <div>
+        <h2>What SRE Agent can do natively</h2>
+        <p>No vendor integration required — it investigates the Azure side of the problem.</p>
+      </div>
+    </div>
+    <div class="grid cols-3">
+      <div class="card k-native">
+        <span class="tag free">Built-in</span>
+        <div class="icn">🧭</div>
+        <h3>Inspect Azure network path</h3>
+        <p>VMs, NICs, VNets, NSGs, user-defined routes, Load Balancer, App Gateway, Azure Firewall, Private Link, and DNS.</p>
+      </div>
+      <div class="card k-native">
+        <span class="tag free">Built-in</span>
+        <div class="icn">📈</div>
+        <h3>Query Azure telemetry</h3>
+        <p>Azure Monitor, Log Analytics, Application Insights, Activity Logs, and resource health for symptoms and recent changes.</p>
+      </div>
+      <div class="card k-native">
+        <span class="tag free">Built-in</span>
+        <div class="icn">🔗</div>
+        <h3>Correlate impact</h3>
+        <p>Tie an outage to an Azure deployment, route change, security-rule change, unhealthy backend, or infrastructure event.</p>
+      </div>
+      <div class="card k-native">
+        <span class="tag free">Built-in</span>
+        <div class="icn">🧩</div>
+        <h3>Validate the expected path</h3>
+        <p>Check whether Azure config and reachability match the intended traffic flow <i>through</i> a Palo Alto firewall or F5 device.</p>
+      </div>
+      <div class="card k-native">
+        <span class="tag free">Built-in</span>
+        <div class="icn">🚨</div>
+        <h3>Receive forwarded incidents</h3>
+        <p>Alerts routed via Azure Monitor, PagerDuty, or ServiceNow — including ones raised by the vendor platform.</p>
+      </div>
+      <div class="card k-native" style="display:grid;place-content:center;text-align:center;background:linear-gradient(150deg,rgba(251,113,133,0.10),transparent);">
+        <div class="icn" style="margin:0 auto 10px;background:rgba(251,113,133,0.14);border-color:rgba(251,113,133,0.3);">⛔</div>
+        <h3>The limit</h3>
+        <p>Without vendor telemetry or an API, it sees evidence up to the boundary — not what happened <i>inside</i> the product.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · LOGS -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num violet">2</div>
+      <div>
+        <h2>What it can dig up from third-party logs</h2>
+        <p>Send Palo Alto / F5 logs to Log Analytics (or a queryable connector) and the agent can correlate them.</p>
+      </div>
+    </div>
+    <div class="grid cols-3">
+      <div class="card k-log">
+        <span class="tag logs">From logs</span>
+        <div class="icn">🔎</div>
+        <h3>Session outcomes</h3>
+        <p>Allowed, denied, dropped, reset, timed-out, or threat-blocked sessions.</p>
+      </div>
+      <div class="card k-log">
+        <span class="tag logs">From logs</span>
+        <div class="icn">🧾</div>
+        <h3>Per-request detail</h3>
+        <p>Source, destination, port, protocol, policy/rule, virtual server, pool, member, action, and recorded reason.</p>
+      </div>
+      <div class="card k-log">
+        <span class="tag logs">From logs</span>
+        <div class="icn">🕰️</div>
+        <h3>Incident timelines</h3>
+        <p>Compare before/after a change and pinpoint the first relevant failure in the sequence.</p>
+      </div>
+      <div class="card k-log">
+        <span class="tag logs">From logs</span>
+        <div class="icn">📊</div>
+        <h3>Cross-signal correlation</h3>
+        <p>Line up firewall / load-balancer events with Azure metrics, app exceptions, backend health, DNS, and Activity Logs.</p>
+      </div>
+      <div class="card k-log">
+        <span class="tag logs">From logs</span>
+        <div class="icn">🎯</div>
+        <h3>Pattern detection</h3>
+        <p>Repeated deny patterns, unhealthy members, traffic imbalance, TLS/cert failures, and capacity pressure — when the fields exist.</p>
+      </div>
+      <div class="card k-log">
+        <span class="tag logs">From logs</span>
+        <div class="icn">📌</div>
+        <h3>Scope &amp; next step</h3>
+        <p>Estimate affected apps, endpoints, clients, regions, and time windows, then recommend the next diagnostic move with evidence.</p>
+      </div>
+    </div>
+    <div class="note">
+      <b>Logs = observability, not control.</b> The agent reports only the fields and history the source retains.
+      Ingestion delay, parsing quality, sampling, clock skew, and missing correlation IDs limit results.
+      Logs alone usually can't fetch live config, run a vendor diagnostic, or safely change a policy or pool member.
+    </div>
+  </section>
+
+  <!-- 3 · EXPOSE -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num teal">3</div>
+      <div>
+        <h2>What to expose for deeper diagnosis &amp; remediation</h2>
+        <p>Expose only the interfaces required for the approved use cases — least privilege first.</p>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:24%">Capability to expose</th>
+            <th style="width:34%">Why the agent needs it</th>
+            <th>Palo Alto / F5 example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="cap">Structured telemetry</span></td>
+            <td>Search &amp; correlate historical behavior</td>
+            <td class="ex">Palo Alto traffic/threat logs or F5 LTM/WAF events in Log Analytics, Kusto, or a supported observability connector</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Read-only config API</span></td>
+            <td>Inspect current policy &amp; topology instead of inferring from logs</td>
+            <td class="ex">Panorama / Strata Cloud Manager API; BIG-IP iControl REST for virtual servers, pools, members, monitors, policies</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Health &amp; stats API</span></td>
+            <td>Verify live operational state &amp; capacity</td>
+            <td class="ex">Firewall / interface / session health; F5 pool-member health, connection counts, throughput</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Change &amp; audit history</span></td>
+            <td>Attribute changes &amp; build the timeline</td>
+            <td class="ex">Palo Alto commits &amp; rule edits; F5 audit &amp; configuration history</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Controlled action API</span></td>
+            <td>Perform narrow remediation after policy checks</td>
+            <td class="ex">Update an approved security object, or disable/enable a specific pool member</td>
+          </tr>
+          <tr>
+            <td><span class="cap">MCP server / API bridge</span></td>
+            <td>Present vendor operations as explicit tools the agent can call</td>
+            <td class="ex">Vendor MCP server, custom MCP wrapper, Azure Function, Logic App, or API Management facade</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Auth &amp; secret management</span></td>
+            <td>Enforce least privilege &amp; support rotation</td>
+            <td class="ex">Read-only identity for investigation; a separate privileged identity for approved writes</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Network connectivity</span></td>
+            <td>Reach private management endpoints without public exposure</td>
+            <td class="ex">SRE Agent VNet integration, private DNS, allow-listed egress, firewall rules, or a private bridge</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Operational knowledge</span></td>
+            <td>Interpret vendor names &amp; apply the right runbook</td>
+            <td class="ex">Architecture diagrams, traffic-flow maps, ownership, policy intent, escalation paths, rollback procedures</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Skills &amp; custom agents</span></td>
+            <td>Make investigations repeatable &amp; domain-specific</td>
+            <td class="ex">A Palo Alto policy investigator or F5 traffic-management specialist with selected tools</td>
+          </tr>
+          <tr>
+            <td><span class="cap">Hooks, approvals &amp; audit</span></td>
+            <td>Prevent unsafe or overly broad changes</td>
+            <td class="ex">Block destructive calls, require Review mode, record tool calls, verify the outcome</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CONNECTION PATTERNS -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num teal">↯</div>
+      <div>
+        <h2>How the agent connects to a vendor platform</h2>
+        <p>The connection determines what the agent can observe, query, or change.</p>
+      </div>
+    </div>
+    <div class="diagram">
+      <p class="connection-intro">
+        Azure SRE Agent does not automatically gain access to Palo Alto, F5, or another vendor platform.
+        You deliberately provide one of these integration paths, along with identity and network access.
+      </p>
+      <div class="connection-lanes">
+        <div class="connection-lane logs">
+          <div class="connection-kind">
+            <span class="num">Pattern 1</span>
+            <strong>Telemetry only</strong>
+          </div>
+          <div class="connection-flow">
+            Vendor logs <span class="arrow">→</span> Log Analytics / Kusto <span class="arrow">→</span> Agent
+          </div>
+          <div class="connection-detail">
+            <div>
+              <span>Agent can</span>
+              <p>Correlate traffic, threat, health, and Azure signals during an investigation.</p>
+            </div>
+            <div>
+              <span>Boundary</span>
+              <p>Historical, read-only visibility; no live configuration queries or vendor-side changes.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="connection-lane mcp">
+          <div class="connection-kind">
+            <span class="num">Pattern 2</span>
+            <strong>Direct tools</strong>
+          </div>
+          <div class="connection-flow">
+            Agent <span class="arrow">→</span> MCP connector <span class="arrow">→</span> Vendor API
+          </div>
+          <div class="connection-detail">
+            <div>
+              <span>Agent can</span>
+              <p>Inspect live policy, topology, sessions, and health through selected vendor operations.</p>
+            </div>
+            <div>
+              <span>Boundary</span>
+              <p>The connector's tools and vendor identity define exactly which queries or actions are available.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="connection-lane bridge">
+          <div class="connection-kind">
+            <span class="num">Pattern 3</span>
+            <strong>Governed bridge</strong>
+          </div>
+          <div class="connection-flow">
+            Agent <span class="arrow">→</span> Function / Logic App / APIM <span class="arrow">→</span> Vendor API
+          </div>
+          <div class="connection-detail">
+            <div>
+              <span>Agent can</span>
+              <p>Invoke approved workflows such as collecting diagnostics or making a narrow remediation.</p>
+            </div>
+            <div>
+              <span>Boundary</span>
+              <p>The bridge enforces validation, allow-listed actions, approvals, audit, and outcome checks.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note rule">
+      <b>Key distinction:</b> Logs let the agent observe. An MCP connector lets it interact.
+      A governed bridge lets it execute approved workflows behind enterprise controls.
+    </div>
+  </section>
+
+  <!-- MATURITY PATH -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-num">↗</div>
+      <div>
+        <h2>Recommended maturity path</h2>
+        <p>Grow capability in stages; keep investigation credentials separate from remediation credentials.</p>
+      </div>
+    </div>
+    <div class="flow">
+      <div class="step">
+        <div class="lvl">Stage 1</div>
+        <h4>Azure-side investigation</h4>
+        <p>Reader access to Azure resources &amp; telemetry. Correlate up to the vendor boundary.</p>
+        <div class="bar"></div>
+      </div>
+      <div class="step">
+        <div class="lvl">Stage 2</div>
+        <h4>Third-party log correlation</h4>
+        <p>Ingest Palo Alto / F5 logs into Log Analytics for cross-signal analysis.</p>
+        <div class="bar"></div>
+      </div>
+      <div class="step">
+        <div class="lvl">Stage 3</div>
+        <h4>Read-only API access</h4>
+        <p>Inspect live policy, topology, and health via vendor APIs or an MCP connector.</p>
+        <div class="bar"></div>
+      </div>
+      <div class="step">
+        <div class="lvl">Stage 4</div>
+        <h4>Scoped writes · Review mode</h4>
+        <p>Narrow, allow-listed actions with approval, rollback, and verification for every change.</p>
+        <div class="bar"></div>
+      </div>
+    </div>
+    <div class="note rule">
+      <b>Practical rule:</b> Azure SRE Agent can work across a third-party boundary only to the extent that it has
+      authenticated access, network reachability, suitable tools, and reliable data from that system.
+    </div>
+  </section>
+
+  <footer>
+    <span>Azure SRE Agent · companion — third-party integration (Palo Alto &amp; F5)</span>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sections = document.querySelectorAll('section');
+
+    if (prefersReduced || !('IntersectionObserver' in window)) {
+      sections.forEach(function (s) { s.classList.add('is-visible'); });
+      return;
+    }
+
+    sections.forEach(function (s) { s.classList.add('reveal'); });
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+    sections.forEach(function (s) { observer.observe(s); });
+  })();
+</script>
+</body>
+</html>

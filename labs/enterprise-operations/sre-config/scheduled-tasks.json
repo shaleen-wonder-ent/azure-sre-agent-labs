@@ -1,0 +1,38 @@
+[
+  {
+    "name": "weekly-vm-availability",
+    "description": "Rolling 30-day VM availability report with unknown time separated",
+    "cronExpression": "0 6 * * 1",
+    "agentPrompt": "Use the enterprise-operations skill. Generate the rolling 30-day VM availability report for @@SCOPE@@ ending at the latest complete UTC day. Define the sampling method; separate available, unavailable, unknown, and planned-exclusion time; compare each VM with 99.9 percent; rank SLO breaches; and report retention or onboarding gaps. Read-only; do not remediate."
+  },
+  {
+    "name": "weekly-resource-lifecycle",
+    "description": "Weekly resource additions, removals, moves, and material changes",
+    "cronExpression": "0 7 * * 1",
+    "agentPrompt": "Use the enterprise-operations skill. Produce the weekly resource lifecycle digest for @@SCOPE@@. Correlate Activity Log and Resource Graph; summarize logical adds, removals, moves, and material updates; attribute callers and deployment IDs; flag unapproved changes; and include source, UTC window, and coverage gaps. Read-only; do not revert or delete anything."
+  },
+  {
+    "name": "daily-change-digest",
+    "description": "Deduplicated 24-hour control-plane and deployment change digest",
+    "cronExpression": "0 8 * * *",
+    "agentPrompt": "Use the enterprise-operations skill. Create the daily 24-hour UTC change digest for @@SCOPE@@. Deduplicate related operations, highlight failed, high-risk, and out-of-window changes, correlate active incidents and deployment history, and publish a concise timeline with source coverage and gaps. Read-only; do not revert changes."
+  },
+  {
+    "name": "weekly-capacity-forecast",
+    "description": "Thirty-day capacity and quota exhaustion forecast",
+    "cronExpression": "0 9 * * 1",
+    "agentPrompt": "Use the enterprise-operations skill. Run a weekly 30-day capacity forecast for @@SCOPE@@ using at least 30 days of hourly history where available. Rank resources expected to cross warning or critical headroom, include forecast range and confidence, distinguish quota from workload constraints, and recommend lead-time-aware actions. Mark insufficient data as inconclusive. Read-only."
+  },
+  {
+    "name": "daily-cost-anomaly-review",
+    "description": "Daily cost anomaly review with operational correlation",
+    "cronExpression": "0 10 * * *",
+    "agentPrompt": "Use the enterprise-operations skill. Run the daily cost anomaly review for @@SCOPE@@, comparing the latest complete cost window with the preceding approved baseline. Rank material anomalies by absolute impact, correlate resource and SKU changes, and report top drivers, confidence, projected monthly impact, owner action, source, and data freshness. If Cost Management access is missing, label estimates clearly. Read-only."
+  },
+  {
+    "name": "daily-multisubscription-health",
+    "description": "Daily normalized operational health digest across authorized subscriptions",
+    "cronExpression": "0 11 * * *",
+    "agentPrompt": "Use the enterprise-operations skill. Generate the daily operational health digest for subscriptions @@SUBSCRIPTION_IDS@@. Produce a normalized scorecard, active incidents and SLO breaches, capacity, security, cost, deployment, and change risks, plus top owner actions. Explicitly list inaccessible scopes and stale or missing sources. Read-only; no cross-subscription remediation."
+  }
+]
