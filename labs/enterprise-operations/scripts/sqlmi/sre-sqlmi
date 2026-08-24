@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly config_file="/etc/sre-sqlmi/connection.env"
+readonly fault_pid_file="/run/sre-sqlmi-blocker.pid"
+readonly fault_log_file="/var/log/sre-sqlmi-blocker.log"
+
+if [[ ! -r "${config_file}" ]]; then
+  echo "SQL MI demo is not bootstrapped: ${config_file} is unavailable." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+source "${config_file}"
+export SQLMI_FQDN SQLMI_DATABASE
+
+run_sql() {
+  local identity_client_id="$1"
+  local query="$2"
+  local access_token="${SQLMI_ACCESS_TOKEN:-}"
+
+  if [[ -z "${access_token}" ]]; then
+    local token_url="http://169.254.169.254/metadata/identity/oauth2/token?api-version=2019-08-01&resource=https%3A%2F%2Fdatabase.windows.net%2F"
+
+    if [[ -n "${identity_client_id}" ]]; then
+      token_url="${token_url}&client_id=${identity_client_id}"
+    fi
+
+    access_token="$(curl --fail --silent --show-error -H Metadata:true "${token_url}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')"
+  fi
+
+  SQLMI_ACCESS_TOKEN="${access_token}" SQLMI_QUERY="${query}" python3 - <<'PY'
+import os
+import struct
+
+import pyodbc
+
+token_bytes = os.environ["SQLMI_ACCESS_TOKEN"].encode("utf-16-le")
+token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+connection_string = (
+    f"Driver={{ODBC Driver 18 for SQL Server}};"
+    f"Server=tcp:{os.environ['SQLMI_FQDN']},1433;"
+    f"Database={os.environ['SQLMI_DATABASE']};"
+    "Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30"
+)
+
+with pyodbc.connect(connection_string, attrs_before={1256: token_struct}, autocommit=True) as connection:
+    cursor = connection.cursor()
+    cursor.execute("SET NOCOUNT ON; " + os.environ["SQLMI_QUERY"])
+    result_set = 0
+    while True:
+        if cursor.description:
+            result_set += 1
+            columns = [column[0] for column in cursor.description]
+            rows = cursor.fetchall()
+            print(f"=== Result set {result_set} ({len(rows)} row(s)) ===")
+            for row_number, row in enumerate(rows, start=1):
+                if len(rows) > 1:
+                    print(f"Row {row_number}")
+                for column, value in zip(columns, row):
+                    print(f"  {column}: {value}")
+                print()
+        if not cursor.nextset():
+            break
+PY
+}
+
+diagnose() {
+  run_sql "" "
+SELECT
+    DB_NAME() AS database_name,
+    @@SERVERNAME AS server_name,
+  CONVERT(varchar(33), SYSUTCDATETIME(), 126) AS captured_utc;
+
+SELECT TOP (10)
+  requests.session_id,
+  requests.blocking_session_id,
+  requests.wait_type,
+  requests.wait_time,
+  requests.wait_resource,
+  requests.status,
+  requests.command
+FROM sys.dm_exec_requests AS requests
+INNER JOIN sys.dm_exec_sessions AS sessions
+  ON requests.session_id = sessions.session_id
+WHERE requests.session_id <> @@SPID
+  AND sessions.is_user_process = 1
+ORDER BY
+  CASE WHEN requests.blocking_session_id <> 0 THEN 0 ELSE 1 END,
+  requests.wait_time DESC;
+
+SELECT TOP (10)
+  query_plan.query_id,
+  query_text.object_id,
+  CONVERT(varchar(33), runtime_stats.last_execution_time, 126) AS last_execution_time,
+  runtime_stats.count_executions,
+  runtime_stats.avg_duration,
+  runtime_stats.avg_cpu_time,
+  runtime_stats.avg_logical_io_reads
+FROM sys.query_store_runtime_stats AS runtime_stats
+INNER JOIN sys.query_store_plan AS query_plan
+    ON runtime_stats.plan_id = query_plan.plan_id
+INNER JOIN sys.query_store_query AS query_text
+    ON query_plan.query_id = query_text.query_id
+ORDER BY last_execution_time DESC;"
+}
+
+start_fault() {
+  local duration_seconds="${1:-600}"
+  if ! [[ "${duration_seconds}" =~ ^[0-9]+$ ]] || (( duration_seconds < 30 || duration_seconds > 600 )); then
+    echo "Duration must be an integer between 30 and 600 seconds." >&2
+    exit 2
+  fi
+
+  if [[ -f "${fault_pid_file}" ]] && kill -0 "$(cat "${fault_pid_file}")" 2>/dev/null; then
+    echo "A blocking fault is already active." >&2
+    exit 3
+  fi
+
+  nohup "$0" blocker >"${fault_log_file}" 2>&1 &
+  local blocker_pid=$!
+  echo "${blocker_pid}" >"${fault_pid_file}"
+
+  sleep 3
+
+  nohup bash -c '
+    timeout "$1" "$2" update || true
+    kill "$3" 2>/dev/null || true
+    rm -f "$4"
+  ' _ "${duration_seconds}" "$0" "${blocker_pid}" "${fault_pid_file}" >>"${fault_log_file}" 2>&1 &
+
+  echo "Blocking fault active for at most ${duration_seconds} seconds (PID ${blocker_pid})."
+}
+
+reset_fault() {
+  if [[ -f "${fault_pid_file}" ]]; then
+    local blocker_pid
+    blocker_pid="$(cat "${fault_pid_file}")"
+    kill "${blocker_pid}" 2>/dev/null || true
+    rm -f "${fault_pid_file}"
+  fi
+
+  run_sql "${SQLMI_WORKLOAD_CLIENT_ID:-}" "UPDATE dbo.Inventory SET ReservedQuantity = 0, LastUpdatedUtc = SYSUTCDATETIME() WHERE ProductId = 1; SELECT ProductId, AvailableQuantity, ReservedQuantity, CONVERT(varchar(33), LastUpdatedUtc, 126) AS LastUpdatedUtc FROM dbo.Inventory WHERE ProductId = 1;"
+}
+
+case "${1:-}" in
+  diagnose)
+    diagnose
+    ;;
+  fault)
+    start_fault "${2:-600}"
+    ;;
+  reset)
+    reset_fault
+    ;;
+  blocker)
+    run_sql "${SQLMI_WORKLOAD_CLIENT_ID:-}" "BEGIN TRANSACTION; UPDATE dbo.Inventory SET ReservedQuantity = ReservedQuantity + 1, LastUpdatedUtc = SYSUTCDATETIME() WHERE ProductId = 1; WAITFOR DELAY '00:10:00'; ROLLBACK TRANSACTION;"
+    ;;
+  update)
+    run_sql "${SQLMI_WORKLOAD_CLIENT_ID:-}" "UPDATE dbo.Inventory SET ReservedQuantity = ReservedQuantity + 1, LastUpdatedUtc = SYSUTCDATETIME() WHERE ProductId = 1;"
+    ;;
+  *)
+    echo "Usage: sre-sqlmi {diagnose|fault [30-600]|reset}" >&2
+    exit 64
+    ;;
+esac

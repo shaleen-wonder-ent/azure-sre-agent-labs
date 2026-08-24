@@ -12,59 +12,41 @@ Activate this skill when:
 
 ## Investigation Procedure
 
-### Step 1: Gather Current Metrics
+### Step 1: Gather Current CPU Metrics
 
-Run the following KQL query against the Log Analytics Workspace to get the current performance snapshot:
+Use Azure Monitor platform metrics, which do not depend on guest telemetry collection:
 
-```kql
-Perf
-| where TimeGenerated > ago(30m)
-| where Computer in ("vm-sap-app-01", "vm-sap-db-01")
-| where ObjectName == "Processor" and CounterName == "% Processor Time"
-    or ObjectName == "Memory" and CounterName == "% Committed Bytes In Use"
-    or ObjectName == "LogicalDisk" and CounterName == "% Free Space"
-| summarize AvgValue = avg(CounterValue), MaxValue = max(CounterValue) by Computer, ObjectName, CounterName
-| order by Computer asc, ObjectName asc
+```bash
+VM_ID=$(az vm show --resource-group rg-srelab-vmcosmos --name vm-sap-app-01 --query id -o tsv)
+az monitor metrics list --resource "$VM_ID" --metric "Percentage CPU" \
+   --interval PT1M --aggregation Average Maximum
 ```
 
 ### Step 2: Check for Anomalies
 
-Compare against the baseline (last 7 days):
+Compare the incident window with the previous 24 hours:
 
-```kql
-Perf
-| where TimeGenerated > ago(7d)
-| where Computer in ("vm-sap-app-01", "vm-sap-db-01")
-| where ObjectName == "Processor" and CounterName == "% Processor Time"
-| summarize
-    AvgCPU = avg(CounterValue),
-    P95CPU = percentile(CounterValue, 95),
-    MaxCPU = max(CounterValue)
-    by Computer, bin(TimeGenerated, 1h)
-| order by TimeGenerated desc
+```bash
+az monitor metrics list --resource "$VM_ID" --metric "Percentage CPU" \
+   --interval PT5M --aggregation Average Maximum \
+   --start-time "$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-### Step 3: Identify Top Processes (if guest diagnostics available)
+### Step 3: Identify Top Processes
 
-```kql
-VMProcess
-| where TimeGenerated > ago(15m)
-| where Computer in ("vm-sap-app-01", "vm-sap-db-01")
-| summarize TotalCPU = sum(PercentProcessorTime) by Computer, ExecutableName
-| top 10 by TotalCPU desc
+```bash
+az vm run-command invoke --resource-group rg-srelab-vmcosmos \
+   --name vm-sap-app-01 --command-id RunShellScript \
+   --scripts "ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -15"
 ```
 
 ### Step 4: Check Recent Changes
 
 Query Activity Logs for recent modifications:
 
-```kql
-AzureActivity
-| where TimeGenerated > ago(24h)
-| where ResourceGroup has "vm-perf"
-| where OperationNameValue has "Microsoft.Compute/virtualMachines"
-| project TimeGenerated, Caller, OperationNameValue, ActivityStatusValue
-| order by TimeGenerated desc
+```bash
+az monitor activity-log list --resource-group rg-srelab-vmcosmos \
+   --offset 1d --status Succeeded
 ```
 
 ## Remediation Actions
@@ -73,7 +55,7 @@ AzureActivity
 1. **Identify and kill runaway process** (if obvious, e.g., stress test)
    ```bash
    az vm run-command invoke --resource-group {rg} --name {vm} \
-     --command-id RunShellScript --scripts "kill -9 $(pgrep stress)"
+   --command-id RunShellScript --scripts "pkill -f stress-ng || true"
    ```
 2. **Restart VM** (if process not identifiable)
    ```bash

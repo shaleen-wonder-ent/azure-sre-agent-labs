@@ -9,15 +9,20 @@
 #   ./scripts/setup-github.sh
 # =============================================================================
 
-# Windows compatibility: python3 may be 'python' on Windows
-if command -v python3 &>/dev/null; then
-  PYTHON=python3
-elif command -v python &>/dev/null; then
-  PYTHON=python
-else
-  echo "ERROR: Python not found"; exit 1
-fi
 set -e
+
+# Windows Store aliases can exist on PATH without launching Python, so probe candidates.
+PYTHON=""
+for candidate in python3 python; do
+  if command -v "$candidate" &>/dev/null && "$candidate" -c 'import sys' &>/dev/null; then
+    PYTHON="$candidate"
+    break
+  fi
+done
+if [ -z "$PYTHON" ]; then
+  echo "ERROR: A working Python interpreter was not found"
+  exit 1
+fi
 
 if [ -z "$GITHUB_PAT" ]; then
   echo "❌ GITHUB_PAT is not set."
@@ -114,9 +119,6 @@ az rest --method PUT \
   --body "{\"properties\":{\"value\":\"${SPEC_B64}\"}}" \
   --output none 2>/dev/null
 echo "   ✅ issue-triager created"
-
-# Save PAT to azd env
-azd env set GITHUB_PAT "$GITHUB_PAT" 2>/dev/null || true
 
 echo ""
 echo "============================================="

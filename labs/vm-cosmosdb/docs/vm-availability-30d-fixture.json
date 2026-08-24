@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "dataClassification": "synthetic_prepared_fixture",
+  "generatedFor": "Azure SRE Agent workshop demonstration",
+  "mustDisplayDisclaimer": "Synthetic 30-day fixture; not measured production availability.",
+  "resource": {
+    "subscriptionId": "09e7c1cb-53ca-4d05-bcf0-8881c42e680e",
+    "resourceGroup": "rg-srelab-vmcosmos",
+    "name": "vm-sap-app-01",
+    "type": "Microsoft.Compute/virtualMachines"
+  },
+  "window": {
+    "startUtc": "2026-07-25T00:00:00Z",
+    "endUtcExclusive": "2026-08-24T00:00:00Z",
+    "samplingIntervalMinutes": 1,
+    "totalMinutes": 43200
+  },
+  "sloPercent": 99.9,
+  "minuteTotals": {
+    "available": 42745,
+    "unavailable": 125,
+    "unknown": 90,
+    "excluded": 240
+  },
+  "expectedCalculation": {
+    "eligibleMinutes": 42870,
+    "availabilityPercent": 99.7084,
+    "coveragePercent": 99.7905,
+    "sloResult": "BREACH",
+    "outageCount": 3,
+    "longestOutageMinutes": 60
+  },
+  "outages": [
+    {
+      "startUtc": "2026-07-29T10:15:00Z",
+      "durationMinutes": 20,
+      "cause": "Application process stopped responding",
+      "evidence": "Synthetic application health event"
+    },
+    {
+      "startUtc": "2026-08-03T03:00:00Z",
+      "durationMinutes": 45,
+      "cause": "Azure host interruption",
+      "evidence": "Synthetic Resource Health event"
+    },
+    {
+      "startUtc": "2026-08-12T14:40:00Z",
+      "durationMinutes": 60,
+      "cause": "Network route misconfiguration",
+      "evidence": "Synthetic Activity Log correlation"
+    }
+  ],
+  "unknownIntervals": [
+    {
+      "startUtc": "2026-08-07T05:00:00Z",
+      "durationMinutes": 90,
+      "cause": "Telemetry collection unavailable"
+    }
+  ],
+  "plannedExclusions": [
+    {
+      "startUtc": "2026-08-16T01:00:00Z",
+      "durationMinutes": 240,
+      "cause": "Approved operating-system maintenance"
+    }
+  ],
+  "validation": {
+    "totalsEquation": "42745 + 125 + 90 + 240 = 43200",
+    "availabilityEquation": "100 * 42745 / (42745 + 125) = 99.7084",
+    "coverageEquation": "100 * 42870 / (43200 - 240) = 99.7905"
+  }
+}

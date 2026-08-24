@@ -19,6 +19,10 @@ param tags object = {}
 
 @description('Principal id of the container apps user-assigned identity (granted Secrets User).')
 param identityPrincipalId string
+@description('Subnet resource ID used by the Key Vault private endpoint.')
+param privateEndpointSubnetId string
+@description('Virtual network resource ID linked to the Key Vault private DNS zone.')
+param vnetId string
 
 @secure()
 @description('PostgreSQL admin password (stored as db-password and db-password-secretlane).')
@@ -39,7 +43,54 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enableRbacAuthorization: true
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: 'Disabled'
+  }
+}
+
+resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.vaultcore.azure.net'
+  location: 'global'
+  tags: tags
+}
+
+resource privateDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDnsZone
+  name: 'zava-vnet-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: { id: vnetId }
+  }
+}
+
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-11-01' = {
+  name: 'pe-${vaultName}'
+  location: location
+  tags: tags
+  properties: {
+    subnet: { id: privateEndpointSubnetId }
+    privateLinkServiceConnections: [
+      {
+        name: 'keyvault'
+        properties: {
+          privateLinkServiceId: vault.id
+          groupIds: [ 'vault' ]
+        }
+      }
+    ]
+  }
+}
+
+resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+  parent: privateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'keyvault'
+        properties: { privateDnsZoneId: privateDnsZone.id }
+      }
+    ]
   }
 }
 

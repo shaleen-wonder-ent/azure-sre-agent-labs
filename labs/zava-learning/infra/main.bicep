@@ -110,6 +110,8 @@ module keyvault 'modules/keyvault.bicep' = {
     resourceToken: resourceToken
     tags: tags
     identityPrincipalId: identity.outputs.identityPrincipalId
+    privateEndpointSubnetId: network.outputs.privateEndpointSubnetId
+    vnetId: network.outputs.vnetId
     dbAdminPassword: dbAdminPassword
     dbPoolPassword: dbPoolPassword
   }

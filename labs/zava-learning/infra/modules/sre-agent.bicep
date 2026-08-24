@@ -150,6 +150,16 @@ resource networkContributorAgent 'Microsoft.Authorization/roleAssignments@2022-0
   }
 }
 
+resource containerAppsContributorAgent 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, identityId, 'containerappscontrib-agent')
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '358470bc-b998-42bd-ab17-a7e34c199c0f')
+    principalId: agentUami.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // Key Vault Secrets User -> lets the agent read the DB password (Key Vault `db-password`) so it can
 // run read-only psql confirmation queries (index health, role connection limits) when diagnosing a
 // database-backed quiz lane. Read-only data-plane access; secrets are redacted from reports by the

@@ -167,7 +167,7 @@ resource portalUnreachable 'Microsoft.Insights/metricAlerts@2018-03-01' = {
           metricName: 'UnhealthyHostCount'
           operator: 'GreaterThanOrEqual'
           threshold: 1
-          timeAggregation: 'Maximum'
+          timeAggregation: 'Average'
           criterionType: 'StaticThresholdCriterion'
         }
       ]

@@ -1,0 +1,57 @@
+{
+  "dataset": "Enterprise operations lab - capacity forecast dataset",
+  "scenario": "Use case 9 - Capacity exhaustion prediction",
+  "workload": "Zava Orders SQL database",
+  "window": { "start": "2026-07-25", "end": "2026-08-24", "granularity": "daily" },
+  "dimensions": {
+    "storageUsedGB": {
+      "unit": "GB",
+      "provisionedLimitGB": 32,
+      "warningPercent": 80,
+      "criticalPercent": 90,
+      "constraintType": "resource limit (provisioned instance storage)",
+      "note": "Monotonic growth from data retention. Distinct from the subscription vCore quota, which is not the binding constraint here."
+    },
+    "peakConcurrentConnections": {
+      "unit": "connections",
+      "limit": 300,
+      "warningLevel": 240,
+      "criticalLevel": 270,
+      "constraintType": "resource limit (max worker/session pressure)",
+      "note": "Weekly seasonality: weekday peaks are materially higher than weekend peaks."
+    }
+  },
+  "samples": [
+    { "date": "2026-07-25", "dayOfWeek": "Sat", "storageUsedGB": 18.42, "peakConcurrentConnections": 118 },
+    { "date": "2026-07-26", "dayOfWeek": "Sun", "storageUsedGB": 18.75, "peakConcurrentConnections": 110 },
+    { "date": "2026-07-27", "dayOfWeek": "Mon", "storageUsedGB": 19.01, "peakConcurrentConnections": 158 },
+    { "date": "2026-07-28", "dayOfWeek": "Tue", "storageUsedGB": 19.38, "peakConcurrentConnections": 163 },
+    { "date": "2026-07-29", "dayOfWeek": "Wed", "storageUsedGB": 19.66, "peakConcurrentConnections": 167 },
+    { "date": "2026-07-30", "dayOfWeek": "Thu", "storageUsedGB": 20.02, "peakConcurrentConnections": 165 },
+    { "date": "2026-07-31", "dayOfWeek": "Fri", "storageUsedGB": 20.29, "peakConcurrentConnections": 160 },
+    { "date": "2026-08-01", "dayOfWeek": "Sat", "storageUsedGB": 20.51, "peakConcurrentConnections": 121 },
+    { "date": "2026-08-02", "dayOfWeek": "Sun", "storageUsedGB": 20.95, "peakConcurrentConnections": 114 },
+    { "date": "2026-08-03", "dayOfWeek": "Mon", "storageUsedGB": 21.28, "peakConcurrentConnections": 172 },
+    { "date": "2026-08-04", "dayOfWeek": "Tue", "storageUsedGB": 21.55, "peakConcurrentConnections": 178 },
+    { "date": "2026-08-05", "dayOfWeek": "Wed", "storageUsedGB": 21.98, "peakConcurrentConnections": 181 },
+    { "date": "2026-08-06", "dayOfWeek": "Thu", "storageUsedGB": 22.24, "peakConcurrentConnections": 179 },
+    { "date": "2026-08-07", "dayOfWeek": "Fri", "storageUsedGB": 22.49, "peakConcurrentConnections": 174 },
+    { "date": "2026-08-08", "dayOfWeek": "Sat", "storageUsedGB": 22.86, "peakConcurrentConnections": 131 },
+    { "date": "2026-08-09", "dayOfWeek": "Sun", "storageUsedGB": 23.19, "peakConcurrentConnections": 123 },
+    { "date": "2026-08-10", "dayOfWeek": "Mon", "storageUsedGB": 23.52, "peakConcurrentConnections": 188 },
+    { "date": "2026-08-11", "dayOfWeek": "Tue", "storageUsedGB": 23.85, "peakConcurrentConnections": 193 },
+    { "date": "2026-08-12", "dayOfWeek": "Wed", "storageUsedGB": 24.13, "peakConcurrentConnections": 197 },
+    { "date": "2026-08-13", "dayOfWeek": "Thu", "storageUsedGB": 24.52, "peakConcurrentConnections": 195 },
+    { "date": "2026-08-14", "dayOfWeek": "Fri", "storageUsedGB": 24.79, "peakConcurrentConnections": 190 },
+    { "date": "2026-08-15", "dayOfWeek": "Sat", "storageUsedGB": 25.06, "peakConcurrentConnections": 142 },
+    { "date": "2026-08-16", "dayOfWeek": "Sun", "storageUsedGB": 25.44, "peakConcurrentConnections": 134 },
+    { "date": "2026-08-17", "dayOfWeek": "Mon", "storageUsedGB": 25.78, "peakConcurrentConnections": 204 },
+    { "date": "2026-08-18", "dayOfWeek": "Tue", "storageUsedGB": 26.12, "peakConcurrentConnections": 210 },
+    { "date": "2026-08-19", "dayOfWeek": "Wed", "storageUsedGB": 26.44, "peakConcurrentConnections": 214 },
+    { "date": "2026-08-20", "dayOfWeek": "Thu", "storageUsedGB": 26.79, "peakConcurrentConnections": 212 },
+    { "date": "2026-08-21", "dayOfWeek": "Fri", "storageUsedGB": 27.11, "peakConcurrentConnections": 206 },
+    { "date": "2026-08-22", "dayOfWeek": "Sat", "storageUsedGB": 27.45, "peakConcurrentConnections": 154 },
+    { "date": "2026-08-23", "dayOfWeek": "Sun", "storageUsedGB": 27.72, "peakConcurrentConnections": 146 },
+    { "date": "2026-08-24", "dayOfWeek": "Mon", "storageUsedGB": 27.98, "peakConcurrentConnections": 221 }
+  ]
+}

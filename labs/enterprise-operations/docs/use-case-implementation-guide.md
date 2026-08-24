@@ -8,6 +8,19 @@ The recommended design is one modular lab with one primary SRE Agent. Do not dep
 or thirteen independent environments. Start with the existing Zava, VM, deployment-compliance, and
 public-port labs, and enable only the optional modules needed for a workshop.
 
+## Implementation status
+
+Use cases 4 and 6–13 are implemented on the enterprise-operations agent with checked-in skills, seed
+scripts, and (for 8, 9, 11) labeled datasets. Use cases 1, 2, 3, and 5 run on the Zava Learning and
+vm-cosmosdb labs. For a recording-ready walkthrough of every use case — the exact setup command, the
+prompt to paste, and what to highlight — see the [demo runbook](../../../SRE-AGENT-DEMO-RUNBOOK.md).
+
+Scenarios that need data the fresh lab cannot provide use a clearly-provenanced dataset kept only in
+the fixture file (Entra sign-ins for 8, metric history for 9, cost detail for 11); the agent always
+states source and freshness and never presents an estimate as billed or live-tenant data. Scenario 4
+uses a lab-only delegated operator token because the SQL MI identity cannot be granted tenant-level
+directory-read permission.
+
 ## 1. Executive resource decision
 
 ### Short answer
@@ -227,6 +240,55 @@ Before running any fault:
 
 ## 4. Use case 1: Application outage root cause analysis
 
+### Demo architecture
+
+The deployed implementation uses `labs/starter-lab` and the Grubify application:
+
+```mermaid
+flowchart LR
+   User[Grubify user] --> UI[Container App: frontend]
+   UI --> API[Container App: API]
+   API --> Cart[In-memory cart state]
+   UI --> AI[Application Insights]
+   API --> AI
+   AI --> LAW[Log Analytics]
+   Alert[Azure Monitor 5xx alert] --> Agent[Azure SRE Agent]
+   Agent --> AI
+   Agent --> LAW
+   Agent --> GitHub[GitHub: shaleen-wonder-ent/grubify]
+```
+
+### Execution record - August 21, 2026
+
+| Item | Observed state |
+|---|---|
+| AZD environment | `srelab-starter` |
+| Resource group | `rg-srelab-starter` |
+| Application baseline | Frontend returned HTTP 200; API returned five restaurants |
+| SRE Agent | Provisioned and reachable |
+| Knowledge | Grubify architecture, HTTP 500 guidance, incident report template, GitHub issue triage |
+| Custom agents | `incident-handler`, `public-exposure-auditor`, `code-analyzer`, `issue-triager` |
+| Connectors | Log Analytics, Azure Monitor, Application Insights, GitHub |
+| Incident routing | Azure Monitor enabled; `grubify-http-errors` routes to `incident-handler` |
+| GitHub integration | OAuth connector and `shaleen-wonder-ent/grubify` repository verified |
+| Current test status | Setup and healthy baseline validated; outage injection and autonomous RCA still pending |
+
+### Working hypothesis and test
+
+The planted-fault hypothesis is that repeated cart POST requests create unbounded in-memory cart
+state, which increases memory pressure and eventually causes failed requests, an out-of-memory
+restart, or elevated HTTP 5xx responses. This is a **hypothesis until the fault is injected and
+corroborated** by at least two independent signals, such as Application Insights failures plus
+Container Apps replica or memory/restart evidence. A healthy network and healthy dependencies must
+be recorded as rejected alternatives rather than assumed.
+
+### Architecture finding
+
+This is a faithful implementation of application-outage RCA. It does not require hub-and-spoke
+networking because the use case tests correlation across application telemetry, platform state,
+alerts, code, and recent changes. Adding enterprise networking would increase cost and diagnosis
+surface without improving the core use-case claim.
+
 ### Purpose and outcome
 
 Correlate application, dependency, infrastructure, network, deployment, and change evidence to identify
@@ -273,6 +335,76 @@ Insights, Log Analytics, Azure Monitor alerts, Activity Log, and the existing RC
 - Recovery is verified with the original user-visible signal.
 
 ## 5. Use case 2: Connectivity diagnostics between hub, spoke, and internet
+
+### Architecture fidelity levels
+
+The repository supports two deliberately different versions of this use case:
+
+| Level | Lab | Topology and evidence | Positioning |
+|---|---|---|---|
+| Fast connectivity-method demo | `labs/zava-learning` | One VNet, separate App Gateway and workload subnets, NSGs, effective rules, backend health, Container Apps ingress | Low-cost approximation; **not hub-and-spoke** |
+| Full-fidelity enterprise demo | `labs/zava-aks-postgres` | Hub VNet, platform spoke, agent spoke, bidirectional peerings, forced-tunnel UDR, Azure Firewall and `AZFW*` logs, private monitoring path | True hub-and-spoke implementation |
+
+The currently deployed `zava-learning` path is:
+
+```mermaid
+flowchart LR
+      Internet --> AppGW[Application Gateway]
+      subgraph VNet[Single VNet: 10.20.0.0/16]
+            AppGW --> AppGwSubnet[appgw-subnet: 10.20.1.0/24]
+            AppGwSubnet --> NSG{Workload subnet NSG}
+            NSG --> NSGLane[NSG lane ACA subnet: 10.20.4.0/23]
+            NSG --> ACA[Primary ACA subnet: 10.20.2.0/23]
+            ACA --> Apps[Zava Container Apps]
+            NSGLane --> Quiz[Isolated quiz lane]
+      end
+```
+
+It has no hub VNet, VNet peering, Azure Firewall, or forced-routing hop. The same diagnostic method
+can still be taught: establish the intended path, inspect effective state hop by hop, identify the
+first failing enforcement point, propose the smallest correction, and verify recovery. What it
+cannot demonstrate is peering state, transitive-routing limitations, UDR next-hop selection, or
+central firewall policy/log analysis.
+
+### Execution record - August 21, 2026
+
+| Item | Observed state |
+|---|---|
+| AZD environment | `srelab-zava` |
+| Resource group | `rg-zava-learning-srelab-zava` |
+| Application baseline | Gateway returned HTTP 200 in approximately 594 ms |
+| PostgreSQL region | `westus3` |
+| SRE Agent | `sre-zava-srelab-zava`, provisioning state `Succeeded` |
+| Network topology | Single `10.20.0.0/16` VNet with segmented subnets and NSGs |
+| Agent behavior configuration | Zero custom skills, zero connectors, zero response plans, and zero scheduled tasks at verification time |
+| Current test status | Infrastructure is healthy; do not inject the NSG fault until the connectivity responder and incident routing are configured |
+
+### Working hypothesis and test
+
+The simplified-demo hypothesis is that a priority-100 inbound deny on the isolated NSG lane will
+override the priority-200 App Gateway allow, make that backend path unhealthy, and trigger the
+symptom-only `Zava-portal-unreachable` alert. The agent should reject DNS, Application Gateway probe,
+Container Apps replica, and application failures using live evidence, then identify the NSG as the
+first failing hop. This tests the same evidence-driven troubleshooting discipline as hub-and-spoke,
+but it must be described as **cross-subnet connectivity**, not cross-VNet hub/spoke routing.
+
+### Architecture decision
+
+**Use the deployed single-VNet Zava Learning lab for the current sequential workshop.** It is already
+healthy, keeps cost and setup time low, and is sufficient to prove the SRE Agent's hypothesis-driven
+network investigation method. Before running it, configure the Zava connectors, connectivity skill,
+responder, response plan, and write-approval boundary.
+
+Use the existing `zava-aks-postgres` lab when the required claim is specifically "hub to spoke to
+internet." That lab already contains the enterprise network resources, so creating a second
+hub/spoke implementation inside `zava-learning` would duplicate infrastructure and increase Azure
+Firewall and AKS cost. The decision gate is:
+
+- Choose `zava-learning` for a quick demonstration of effective NSG rules, backend health, fault
+   isolation, and minimum-change remediation.
+- Choose `zava-aks-postgres` for peering, UDR, Azure Firewall, private AKS, agent-spoke egress, and
+   `AZFW*` evidence.
+- Do not present the first option as true hub-and-spoke in customer-facing material.
 
 ### Purpose and outcome
 
@@ -331,7 +463,22 @@ process, CPU, memory, disk, or network conditions, then produce an evidence-base
 ### Resource decision
 
 **No new service is required.** Reuse a VM from `labs/vm-cosmosdb` or the Zava reporting worker. The
-required additions are Azure Monitor Agent/Data Collection Rules if guest telemetry is missing.
+CPU demonstration uses Azure Monitor platform metrics and VM Run Command, so it does not depend on
+guest telemetry. Add Azure Monitor Agent/Data Collection Rules before demonstrating guest memory,
+disk, or process telemetry as time-series data.
+
+### Verified readiness (2026-08-21)
+
+- `vm-sap-app-01` is running and the application and Cosmos DB health checks pass.
+- `alert-cpu-high-vm-sap-app-01` is enabled at severity 2 for average CPU above 85 percent over five
+   minutes, evaluated every minute.
+- Azure Monitor is the SRE Agent incident platform and workspace, Azure CLI, and Python tools are
+   enabled.
+- `vm-performance-diagnostics` is registered as a skill and uses platform metrics plus VM Run
+   Command for evidence.
+- `vm-incident-responder` is registered with read/write Azure CLI tools and skills enabled.
+- `vm-perf-alerts` is enabled in autonomous mode and routes to `vm-incident-responder`.
+- The pre-test baseline had no active SRE incidents, no `stress-ng` process, and low CPU.
 
 ### Implementation steps
 
@@ -347,16 +494,19 @@ required additions are Azure Monitor Agent/Data Collection Rules if guest teleme
 
 ### How to use SRE Agent
 
-1. Run one VM fault and note the UTC start time.
-2. Open the incident or use prompt 3.
-3. Verify the agent checks Resource Health and power state before guest metrics.
-4. Require correlation of heartbeat, performance, boot/guest logs, extensions, effective network, and
-   Activity Log.
-5. Ask it to classify the fault domain and provide confidence.
-6. Reject a restart-only answer; restart is a possible mitigation, not a root cause.
-7. Approve the least disruptive lab action if required, such as stopping the stress process.
-8. Verify heartbeat, metric, service, and user-visible recovery.
-9. Generate the VM incident report and reset the lab.
+1. From `labs/vm-cosmosdb`, run `bash scripts/break-vm.sh cpu` and note the UTC start time. The fault
+   runs `stress-ng --cpu 2 --timeout 600` and ends automatically after ten minutes.
+2. Wait approximately three to five minutes for the sustained CPU alert, then open the SRE Agent
+   incident thread.
+3. Verify the responder checks platform CPU history and uses VM Run Command to identify the top
+   process before taking action.
+4. Confirm it identifies `stress-ng`, stops only that process, and does not restart or resize the VM.
+5. Verify CPU returns to baseline, the application and Cosmos DB remain healthy, and the alert
+   resolves.
+6. If automated remediation does not stop the process, run `az vm run-command invoke -g
+   rg-srelab-vmcosmos -n vm-sap-app-01 --command-id RunShellScript --scripts "pkill -f stress-ng ||
+   true"` as the cleanup fallback.
+7. Generate the VM incident report and record alert-to-incident and remediation timings.
 
 ### Completion criteria
 

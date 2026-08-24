@@ -7,6 +7,9 @@ for this phase** — they are discussed separately and their parked assets live 
 
 > Companion document: [AZURE-SRE-AGENT-DEMO-GUIDE-2026-08-06.md](AZURE-SRE-AGENT-DEMO-GUIDE-2026-08-06.md)
 > (product overview, scope model, pricing, and live-demo flow).
+>
+> Per-use-case architecture, implementation, findings, hypotheses, and acceptance criteria:
+> [labs/enterprise-operations/docs/use-case-implementation-guide.md](labs/enterprise-operations/docs/use-case-implementation-guide.md).
 
 ## How to read this catalog
 
@@ -28,7 +31,7 @@ for this phase** — they are discussed separately and their parked assets live 
 | # | Scenario | What the SRE Agent does | Primary Azure data sources | Best lab to demo | Run mode |
 |---|----------|-------------------------|----------------------------|------------------|----------|
 | 1 | **Application outage root cause analysis** | Correlate infrastructure, network, and application telemetry to identify outage causes and remediation actions | **Application Insights**, **Log Analytics**, Azure Monitor alerts, Activity Log, deployment history | [zava-learning](labs/zava-learning/) · [starter-lab](labs/starter-lab/) · [zava-aks-postgres](labs/zava-aks-postgres/) | Review |
-| 2 | **Connectivity diagnostics: hub ↔ spoke ↔ internet** | Detect connectivity bottlenecks and provide actionable recommendations for network optimization | **Connection Monitor**, Network Watcher, `AZFW*` firewall logs, NSG/VNet flow logs, effective routes | [zava-aks-postgres](labs/zava-aks-postgres/) (hub-spoke + Azure Firewall) · [zava-learning](labs/zava-learning/) (App Gateway → NSG → ACA) | Review |
+| 2 | **Connectivity diagnostics: hub ↔ spoke ↔ internet** | Detect connectivity bottlenecks and provide actionable recommendations for network optimization | **Connection Monitor**, Network Watcher, `AZFW*` firewall logs, NSG/VNet flow logs, effective routes | [zava-aks-postgres](labs/zava-aks-postgres/) (true hub-spoke + Azure Firewall) · [zava-learning](labs/zava-learning/) (single-VNet App Gateway → NSG → ACA approximation; not hub-spoke) | Review |
 | 3 | **VM & infrastructure incident investigation** | Rapidly determine probable root cause of infrastructure issues and generate a summarized incident report | Azure **Monitor alert**, VM Insights, `InsightsMetrics`/`Perf` (KQL), Activity Log | [vm-cosmosdb](labs/vm-cosmosdb/) (VM perf-drift lab) | Review |
 | 4 | **Azure SQL Managed Instance performance analysis** | Identify performance bottlenecks and optimization opportunities to improve database efficiency | SQL MI metrics, **Query Performance Insight**, `AzureDiagnostics`/`AzureMetrics` (KQL) | [enterprise-operations](labs/enterprise-operations/) (**SQL MI module**) | Reader |
 | 5 | **VM availability report (past 30 days)** | Track VM uptime and availability trends for SLA validation and reliability reporting | **Resource Health**, Azure Monitor VM metrics, `Heartbeat`/`AzureActivity` in Log Analytics | [vm-cosmosdb](labs/vm-cosmosdb/) · [public-port-guard](labs/public-port-guard/) (VMs) | Reader |

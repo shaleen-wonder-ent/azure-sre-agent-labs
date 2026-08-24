@@ -28,6 +28,11 @@ variable "location" {
   type        = string
 }
 
+variable "identity_location" {
+  description = "Region for the user-assigned identity."
+  type        = string
+}
+
 variable "primary_subscription_id" {
   description = "Primary subscription resource ID."
   type        = string

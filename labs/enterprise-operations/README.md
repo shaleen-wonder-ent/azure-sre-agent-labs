@@ -143,6 +143,9 @@ labs/enterprise-operations/
   README.md
   docs/
     use-case-implementation-guide.md
+    capacity-forecast-fixture.json      # UC9 seeded time series
+    cost-anomaly-fixture.json           # UC11 cost dataset
+    entra-signin-fixture.json           # UC8 sign-in/audit dataset
   infra/
     README.md
     *.tf
@@ -156,17 +159,44 @@ labs/enterprise-operations/
   prompts/
     scenario-prompts.md
   sre-config/
-    skills/enterprise-operations/SKILL.md
+    skills/
+      enterprise-operations/SKILL.md
+      sqlmi-performance/SKILL.md        # UC4
+      entra-authentication/SKILL.md     # UC8
+      capacity-forecast/SKILL.md        # UC9
+      cost-anomaly/SKILL.md             # UC11
+      security-investigation/SKILL.md   # UC12
+      fleet-health/SKILL.md             # UC13
     scheduled-tasks.json
   scripts/
-    Configure-SreAgent.ps1
+    Configure-SreAgent.ps1              # base skills, connectors, hook, tasks
+    Install-AgentSkill.ps1              # generic skill installer (UC9/11/12/13)
+    Add-EntraAuthSkill.ps1              # UC8 skill + dataset
+    Initialize-SqlMiDemo.ps1            # UC4 database bootstrap
+    Invoke-SqlMiDemo.ps1               # UC4 diagnose/fault/reset
+    Seed-ResourceLifecycle.ps1         # UC6 seed
+    Seed-ChangeDigest.ps1              # UC7 seed
+    Seed-DeploymentFaults.ps1          # UC10 seed
+    Seed-SecurityIncident.ps1          # UC12 seed
+    sqlmi/                             # UC4 VM bootstrap + operator bridge
 ```
+
+For a recording-ready walkthrough of all 13 use cases (setup command, prompt, and what to
+highlight), see the [demo runbook](../../SRE-AGENT-DEMO-RUNBOOK.md).
+
 
 Start with the [Terraform operator guide](infra/README.md). It documents prerequisites, remote
 state, core deployment, optional SQL MI/Entra/secondary-subscription modules, agent configuration,
 verification, fault injection, and teardown. Terraform owns Azure control-plane resources; the
 idempotent PowerShell runner owns the SRE Agent skills, connectors, knowledge, approval hook,
 response plan, and scheduled tasks.
+
+Scenario 4 currently uses a lab-only delegated operator fallback: the signed-in Entra administrator
+obtains a fresh short-lived Azure SQL token for each private VM invocation. The token is sent as a
+protected Managed Run Command parameter and is never persisted. This fallback is required because
+the SQL MI identity cannot resolve managed identities without tenant-level directory-read permission;
+it is not the recommended production identity design. Diagnose remains read-only, while fault and
+reset require explicit `-ApproveWrite`.
 
 ## Build order
 

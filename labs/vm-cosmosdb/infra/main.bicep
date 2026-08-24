@@ -75,6 +75,8 @@ module cosmosDb 'modules/cosmosdb.bicep' = {
     environmentName: environmentName
     tags: union(tags, { role: 'database' })
     vmIdentityPrincipalId: vmApp.outputs.vmPrincipalId
+    privateEndpointSubnetId: network.outputs.dbSubnetId
+    vnetId: network.outputs.vnetId
   }
 }
 

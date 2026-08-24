@@ -13,6 +13,17 @@ variable "location" {
   type        = string
 }
 
+variable "data_collection_rule_location" {
+  description = "Region of the destination Log Analytics workspace."
+  type        = string
+}
+
+variable "user_assigned_identity_ids" {
+  description = "Optional user-assigned identities attached to the diagnostics VM."
+  type        = list(string)
+  default     = []
+}
+
 variable "subnet_id" {
   description = "Private diagnostics subnet ID."
   type        = string

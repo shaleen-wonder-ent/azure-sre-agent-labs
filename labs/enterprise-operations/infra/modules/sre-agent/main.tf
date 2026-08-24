@@ -8,7 +8,7 @@ locals {
 
 resource "azurerm_user_assigned_identity" "agent" {
   name                = "id-${var.name_prefix}-agent"
-  location            = var.location
+  location            = var.identity_location
   resource_group_name = var.resource_group_name
   tags                = var.tags
 }

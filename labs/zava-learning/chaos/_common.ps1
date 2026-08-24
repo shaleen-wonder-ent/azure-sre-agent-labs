@@ -213,7 +213,17 @@ function Get-KvSecret {
     [Parameter(Mandatory)][string]$Name
   )
   $kv = Get-KeyVaultName -ResourceGroup $ResourceGroup
-  $value = az keyvault secret show --vault-name $kv -n $Name --query value -o tsv
+  $value = az keyvault secret show --vault-name $kv -n $Name --query value -o tsv 2>$null
+  if (-not $value) {
+    $fallbackVariable = switch ($Name) {
+      'db-password' { 'POSTGRES_ADMIN_PASSWORD' }
+      'db-pool-password' { 'POSTGRES_POOL_PASSWORD' }
+      default { $null }
+    }
+    if ($fallbackVariable) {
+      $value = [Environment]::GetEnvironmentVariable($fallbackVariable)
+    }
+  }
   if (-not $value) { throw "Could not read Key Vault secret '$Name' from $kv." }
   return $value
 }

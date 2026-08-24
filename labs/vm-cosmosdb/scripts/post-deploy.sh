@@ -13,11 +13,13 @@
 
 set -uo pipefail
 
-# Windows compatibility: python3 may be 'python' on Windows
-if command -v python3 &>/dev/null; then
-  PYTHON=python3
-elif command -v python &>/dev/null; then
-  PYTHON=python
+# Windows compatibility: command lookup may find a nonfunctional Store alias.
+if python3 -c "import sys" &>/dev/null; then
+  PYTHON_CMD=(python3)
+elif python -c "import sys" &>/dev/null; then
+  PYTHON_CMD=(python)
+elif py -3 -c "import sys" &>/dev/null; then
+  PYTHON_CMD=(py -3)
 else
   echo "ERROR: Python not found. Install Python 3."
   exit 1
@@ -190,7 +192,7 @@ echo -e "\n${YELLOW}[2/7] Ensuring SRE Agent Administrator role...${NC}"
 ACCESS_TOKEN=$(az account get-access-token --resource "https://azuresre.dev" --query accessToken -o tsv 2>/dev/null)
 USER_OID=""
 if [[ -n "$ACCESS_TOKEN" ]]; then
-  USER_OID=$($PYTHON -c "
+  USER_OID=$("${PYTHON_CMD[@]}" -c "
 import json, base64, sys
 try:
     token = sys.argv[1]
@@ -253,22 +255,86 @@ az rest --method patch \
   echo -e "${GREEN}  ✓ Azure Monitor + DevOps & Python tools configured.${NC}" || \
   echo -e "${YELLOW}  Could not configure incident platform.${NC}"
 
-# ---- Step 5: Upload knowledge base (skill docs as KB files) ----
-echo -e "\n${YELLOW}[5/7] Uploading knowledge base...${NC}"
+# ---- Step 5: Upload knowledge and register the VM responder ----
+echo -e "\n${YELLOW}[5/7] Configuring VM diagnostics skill and responder...${NC}"
 TOKEN=$(get_agent_token)
+
+VM_DIAGNOSTICS_FILE="${LAB_DIR}/skills/vm-performance-diagnostics.md"
+DRIFT_DETECTION_FILE="${LAB_DIR}/skills/compliance-drift-detection.md"
+if command -v cygpath &>/dev/null; then
+  VM_DIAGNOSTICS_FILE=$(cygpath -w "$VM_DIAGNOSTICS_FILE")
+  DRIFT_DETECTION_FILE=$(cygpath -w "$DRIFT_DETECTION_FILE")
+fi
 
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
   -X POST "${AGENT_ENDPOINT}/api/v1/AgentMemory/upload" \
   -H "Authorization: Bearer ${TOKEN}" \
   -F "triggerIndexing=true" \
-  -F "files=@${LAB_DIR}/skills/vm-performance-diagnostics.md;type=text/plain" \
-  -F "files=@${LAB_DIR}/skills/compliance-drift-detection.md;type=text/plain")
+  -F "files=@${VM_DIAGNOSTICS_FILE};type=text/plain" \
+  -F "files=@${DRIFT_DETECTION_FILE};type=text/plain")
 
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
   echo -e "${GREEN}  ✓ Uploaded: vm-performance-diagnostics.md${NC}"
   echo -e "${GREEN}  ✓ Uploaded: compliance-drift-detection.md${NC}"
 else
   echo -e "${YELLOW}  Upload returned HTTP ${HTTP_CODE}${NC}"
+fi
+
+SKILL_BODY=$("${PYTHON_CMD[@]}" -c "
+import json, sys
+
+content = sys.stdin.read()
+print(json.dumps({
+    'name': 'vm-performance-diagnostics',
+    'type': 'Skill',
+    'properties': {
+        'description': 'Diagnoses Azure VM CPU and memory alerts and safely stops known runaway processes',
+        'tools': ['SearchMemory', 'GetAzCliHelp', 'RunAzCliReadCommands', 'RunAzCliWriteCommands'],
+        'skillContent': content,
+        'additionalFiles': []
+    }
+}))
+
+  " < "${LAB_DIR}/skills/vm-performance-diagnostics.md")
+HTTP_CODE=$(echo "$SKILL_BODY" | curl -s -o /dev/null -w "%{http_code}" \
+  -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/skills/vm-performance-diagnostics" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d @-)
+if [[ "$HTTP_CODE" =~ ^20[0-4]$ ]]; then
+  echo -e "${GREEN}  ✓ Registered skill: vm-performance-diagnostics${NC}"
+else
+  echo -e "${YELLOW}  Skill registration returned HTTP ${HTTP_CODE}${NC}"
+fi
+
+RESPONDER_BODY=$("${PYTHON_CMD[@]}" -c "
+import json
+
+print(json.dumps({
+    'name': 'vm-incident-responder',
+    'type': 'ExtendedAgent',
+    'tags': [],
+    'owner': '',
+    'properties': {
+        'instructions': '''Investigate Azure Monitor alerts for vm-sap-app-01 in ${RESOURCE_GROUP}. Use the vm-performance-diagnostics skill. Establish current and historical platform metrics, inspect running processes with Azure VM Run Command, and document evidence before acting. You may stop a clearly identified stress-ng process because that action is bounded and reversible. Require human approval before restarting or resizing the VM. Never delete resources.''',
+        'handoffDescription': 'Diagnoses and safely remediates VM CPU and memory incidents',
+        'handoffs': [],
+        'tools': ['SearchMemory', 'GetAzCliHelp', 'RunAzCliReadCommands', 'RunAzCliWriteCommands'],
+        'mcpTools': [],
+        'allowParallelToolCalls': True,
+        'enableSkills': True
+    }
+}))
+")
+HTTP_CODE=$(echo "$RESPONDER_BODY" | curl -s -o /dev/null -w "%{http_code}" \
+  -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/agents/vm-incident-responder" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d @-)
+if [[ "$HTTP_CODE" =~ ^20[0-4]$ ]]; then
+  echo -e "${GREEN}  ✓ Registered responder: vm-incident-responder${NC}"
+else
+  echo -e "${YELLOW}  Responder registration returned HTTP ${HTTP_CODE}${NC}"
 fi
 
 # ---- Step 5.5: GitHub connector + code repo ----
@@ -298,7 +364,7 @@ echo -e "${GREEN}  ✓ GitHub OAuth connector created${NC}"
 # Get OAuth URL — fetch BEFORE ARM connector creation
 TOKEN=$(get_agent_token)
 GITHUB_CONFIG=$(curl -s "${AGENT_ENDPOINT}/api/v1/github/config" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null)
-OAUTH_URL=$(echo "$GITHUB_CONFIG" | $PYTHON -c "
+OAUTH_URL=$(echo "$GITHUB_CONFIG" | "${PYTHON_CMD[@]}" -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
@@ -364,7 +430,7 @@ for attempt in 1 2 3 4 5; do
     -X PUT "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters/vm-perf-alerts" \
     -H "Authorization: Bearer ${TOKEN}" \
     -H "Content-Type: application/json" \
-    -d '{"id":"vm-perf-alerts","name":"VM Performance Alerts","priorities":["Sev0","Sev1","Sev2","Sev3","Sev4"],"titleContains":"","handlingAgent":"","agentMode":"autonomous","maxAttempts":3}')
+    -d '{"id":"vm-perf-alerts","name":"VM Performance Alerts","priorities":["Sev0","Sev1","Sev2","Sev3","Sev4"],"titleContains":"","handlingAgent":"vm-incident-responder","agentMode":"autonomous"}')
 
   if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "409" ]; then
     echo -e "${GREEN}  ✓ Response plan: vm-perf-alerts${NC}"
@@ -391,7 +457,7 @@ TOKEN=$(get_agent_token)
 
 echo "  📚 Knowledge Base:"
 KB_FILES=$(curl -s "${AGENT_ENDPOINT}/api/v1/AgentMemory/files" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null)
-echo "$KB_FILES" | $PYTHON -c "
+echo "$KB_FILES" | "${PYTHON_CMD[@]}" -c "
 import sys,json
 try:
     d=json.load(sys.stdin)
@@ -405,7 +471,7 @@ except: print('     (could not retrieve)')
 echo ""
 echo "  📡 Incident Platform:"
 PLATFORM_RAW=$(curl -s "${AGENT_ENDPOINT}/api/v1/incidentPlayground/incidentPlatformType" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || echo "{}")
-echo "$PLATFORM_RAW" | $PYTHON -c "
+echo "$PLATFORM_RAW" | "${PYTHON_CMD[@]}" -c "
 import sys,json
 try:
     d=json.load(sys.stdin)

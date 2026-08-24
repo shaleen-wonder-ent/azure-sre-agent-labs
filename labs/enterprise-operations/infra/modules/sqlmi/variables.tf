@@ -8,6 +8,11 @@ variable "managed_instance_name" {
   type        = string
 }
 
+variable "database_name" {
+  description = "Dedicated database used by the SQL MI performance demonstration."
+  type        = string
+}
+
 variable "resource_group_name" {
   description = "Overlay resource group name."
   type        = string
@@ -53,16 +58,19 @@ variable "license_type" {
   type        = string
 }
 
-variable "administrator_login" {
-  description = "SQL MI administrator login."
+variable "entra_administrator_login" {
+  description = "Microsoft Entra administrator login name."
   type        = string
 }
 
-variable "administrator_password" {
-  description = "SQL MI administrator password."
+variable "entra_administrator_id" {
+  description = "Microsoft Entra administrator object ID."
   type        = string
-  sensitive   = true
-  nullable    = true
+}
+
+variable "tenant_id" {
+  description = "Microsoft Entra tenant ID."
+  type        = string
 }
 
 variable "tags" {

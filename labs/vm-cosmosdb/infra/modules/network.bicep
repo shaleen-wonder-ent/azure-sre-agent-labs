@@ -81,6 +81,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
         name: 'snet-db'
         properties: {
           addressPrefix: '10.0.2.0/24'
+          privateEndpointNetworkPolicies: 'Disabled'
           networkSecurityGroup: {
             id: nsg.id
           }

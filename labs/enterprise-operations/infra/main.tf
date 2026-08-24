@@ -38,13 +38,6 @@ check "secondary_subscription_inputs" {
   }
 }
 
-check "sqlmi_inputs" {
-  assert {
-    condition     = !var.enable_sql_managed_instance || var.sqlmi_administrator_password != null
-    error_message = "Supply sqlmi_administrator_password through a secure variable source before enabling SQL MI."
-  }
-}
-
 module "networking" {
   source = "./modules/networking"
 
@@ -71,18 +64,29 @@ resource "azurerm_virtual_network_peering" "zava_to_hub" {
   use_remote_gateways          = false
 }
 
+resource "azurerm_user_assigned_identity" "sqlmi_workload" {
+  count = var.enable_sql_managed_instance ? 1 : 0
+
+  name                = "id-${local.resource_token}-sqlmi-workload"
+  location            = azurerm_resource_group.overlay.location
+  resource_group_name = azurerm_resource_group.overlay.name
+  tags                = local.tags
+}
+
 module "compute" {
   source = "./modules/compute"
 
-  name_prefix                = local.resource_token
-  resource_group_name        = azurerm_resource_group.overlay.name
-  location                   = azurerm_resource_group.overlay.location
-  subnet_id                  = module.networking.diagnostics_subnet_id
-  log_analytics_workspace_id = data.azurerm_log_analytics_workspace.zava.id
-  vm_size                    = var.diagnostics_vm_size
-  admin_username             = var.admin_username
-  admin_ssh_public_key       = var.admin_ssh_public_key
-  tags                       = local.tags
+  name_prefix                   = local.resource_token
+  resource_group_name           = azurerm_resource_group.overlay.name
+  location                      = azurerm_resource_group.overlay.location
+  data_collection_rule_location = data.azurerm_log_analytics_workspace.zava.location
+  subnet_id                     = module.networking.diagnostics_subnet_id
+  log_analytics_workspace_id    = data.azurerm_log_analytics_workspace.zava.id
+  vm_size                       = var.diagnostics_vm_size
+  admin_username                = var.admin_username
+  admin_ssh_public_key          = var.admin_ssh_public_key
+  user_assigned_identity_ids    = var.enable_sql_managed_instance ? [azurerm_user_assigned_identity.sqlmi_workload[0].id] : []
+  tags                          = local.tags
 }
 
 module "monitoring" {
@@ -116,7 +120,8 @@ module "sre_agent" {
   resource_group_id                      = azurerm_resource_group.overlay.id
   resource_group_name                    = azurerm_resource_group.overlay.name
   zava_resource_group_id                 = data.azurerm_resource_group.zava.id
-  location                               = azurerm_resource_group.overlay.location
+  location                               = var.sre_agent_location
+  identity_location                      = azurerm_resource_group.overlay.location
   primary_subscription_id                = data.azurerm_subscription.primary.id
   log_analytics_workspace_id             = data.azurerm_log_analytics_workspace.zava.id
   application_insights_id                = data.azurerm_application_insights.zava.id
@@ -137,6 +142,7 @@ module "sqlmi" {
 
   name_prefix                = local.resource_token
   managed_instance_name      = local.sqlmi_name
+  database_name              = var.sqlmi_database_name
   resource_group_name        = azurerm_resource_group.overlay.name
   location                   = azurerm_resource_group.overlay.location
   virtual_network_name       = module.networking.hub_virtual_network_name
@@ -146,8 +152,9 @@ module "sqlmi" {
   vcores                     = var.sqlmi_vcores
   storage_size_gb            = var.sqlmi_storage_size_gb
   license_type               = var.sqlmi_license_type
-  administrator_login        = var.sqlmi_administrator_login
-  administrator_password     = var.sqlmi_administrator_password
+  entra_administrator_login  = var.sqlmi_entra_administrator_login
+  entra_administrator_id     = data.azurerm_client_config.current.object_id
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
   tags                       = local.tags
 }
 

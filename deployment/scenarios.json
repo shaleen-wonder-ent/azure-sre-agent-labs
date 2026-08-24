@@ -18,6 +18,7 @@
   "labs": [
     {
       "id": "starter-lab",
+      "environmentSuffix": "starter",
       "path": "labs/starter-lab",
       "azdCommand": "up",
       "postDeploy": "bash:scripts/post-provision.sh",
@@ -25,6 +26,7 @@
     },
     {
       "id": "zava-learning",
+      "environmentSuffix": "zava",
       "path": "labs/zava-learning",
       "azdCommand": "up",
       "postDeploy": "zava",
@@ -32,6 +34,7 @@
     },
     {
       "id": "vm-cosmosdb",
+      "environmentSuffix": "vmcosmos",
       "path": "labs/vm-cosmosdb",
       "azdCommand": "up",
       "postDeploy": "bash:scripts/post-deploy.sh",
@@ -39,6 +42,7 @@
     },
     {
       "id": "deployment-compliance",
+      "environmentSuffix": "compliance",
       "path": "labs/deployment-compliance",
       "azdCommand": "up",
       "postDeploy": "bash:scripts/post-deploy.sh",
@@ -46,6 +50,7 @@
     },
     {
       "id": "public-port-guard",
+      "environmentSuffix": "portguard",
       "path": "labs/public-port-guard",
       "azdCommand": "provision",
       "postDeploy": "pwsh:scripts/configure-agent.ps1",
@@ -53,6 +58,7 @@
     },
     {
       "id": "enterprise-operations",
+      "environmentSuffix": "enterprise",
       "path": "labs/enterprise-operations",
       "dependsOn": ["zava-learning"],
       "azdCommand": null,

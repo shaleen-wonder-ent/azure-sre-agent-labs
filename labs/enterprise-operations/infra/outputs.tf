@@ -3,6 +3,11 @@ output "resource_group_id" {
   value       = azurerm_resource_group.overlay.id
 }
 
+output "resource_group_name" {
+  description = "Enterprise operations overlay resource group name."
+  value       = azurerm_resource_group.overlay.name
+}
+
 output "sre_agent_id" {
   description = "Azure SRE Agent resource ID."
   value       = module.sre_agent.agent_id
@@ -38,9 +43,29 @@ output "diagnostics_vm_id" {
   value       = module.compute.virtual_machine_id
 }
 
+output "diagnostics_vm_name" {
+  description = "Private diagnostics VM name."
+  value       = module.compute.virtual_machine_name
+}
+
 output "diagnostics_vm_private_ip" {
   description = "Private diagnostics VM address."
   value       = module.compute.private_ip_address
+}
+
+output "diagnostics_vm_principal_id" {
+  description = "System-assigned identity principal ID used for read-only SQL diagnostics."
+  value       = module.compute.virtual_machine_principal_id
+}
+
+output "sqlmi_workload_identity_client_id" {
+  description = "Client ID of the bounded SQL MI workload identity."
+  value       = try(azurerm_user_assigned_identity.sqlmi_workload[0].client_id, null)
+}
+
+output "sqlmi_workload_identity_principal_id" {
+  description = "Principal ID of the bounded SQL MI workload identity."
+  value       = try(azurerm_user_assigned_identity.sqlmi_workload[0].principal_id, null)
 }
 
 output "nat_public_ip_address" {
@@ -81,6 +106,16 @@ output "primary_subscription_id" {
 output "sqlmi_fqdn" {
   description = "Optional private SQL MI FQDN."
   value       = try(module.sqlmi[0].managed_instance_fqdn, null)
+}
+
+output "sqlmi_database_id" {
+  description = "Optional SQL MI performance demo database ID."
+  value       = try(module.sqlmi[0].database_id, null)
+}
+
+output "sqlmi_database_name" {
+  description = "Optional SQL MI performance demo database name."
+  value       = try(module.sqlmi[0].database_name, null)
 }
 
 output "secondary_test_resource_group_id" {

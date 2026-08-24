@@ -11,6 +11,7 @@ Set-StrictMode -Version Latest
 
 $labRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $skillPath = Join-Path $labRoot 'sre-config\skills\enterprise-operations\SKILL.md'
+$sqlMiSkillPath = Join-Path $labRoot 'sre-config\skills\sqlmi-performance\SKILL.md'
 $tasksPath = Join-Path $labRoot 'sre-config\scheduled-tasks.json'
 $guidePath = Join-Path $labRoot 'docs\use-case-implementation-guide.md'
 $promptsPath = Join-Path $labRoot 'prompts\scenario-prompts.md'
@@ -139,6 +140,10 @@ $agentPatch = @{
     }
 }
 Invoke-ArmApi -Method Patch -Url "https://management.azure.com$agentId`?api-version=2025-05-01-preview" -Body $agentPatch | Out-Null
+az resource wait --ids $agentId --custom "properties.provisioningState=='Succeeded'" --interval 10 --timeout 600
+if ($LASTEXITCODE -ne 0) {
+    throw 'SRE Agent did not return to Succeeded after its incident configuration update.'
+}
 Write-Ok 'Azure Monitor incident platform is configured.'
 
 Write-Step '[3/8] Creating Azure Monitor and Log Analytics connectors'
@@ -192,6 +197,22 @@ $skillBody = @{
 }
 Invoke-AgentApi -Method Put -Path '/api/v2/extendedAgent/skills/enterprise-operations' -Body $skillBody | Out-Null
 Write-Ok 'Skill: enterprise-operations'
+
+if (-not (Test-Path $sqlMiSkillPath)) { throw "Skill file not found: $sqlMiSkillPath" }
+$sqlMiSkillBody = @{
+    name = 'sqlmi-performance'
+    type = 'Skill'
+    properties = @{
+        description = 'Read-only SQL MI performance analysis using Azure Monitor and operator-supplied Query Store and DMV evidence.'
+        tools = @('SearchMemory', 'QueryLogAnalyticsByWorkspaceId', 'RunAzCliReadCommands', 'GetAzCliHelp')
+        skillContent = Get-Content -Raw $sqlMiSkillPath
+        additionalFiles = @(
+            @{ filePath = 'scenario-prompts.md'; content = Get-Content -Raw $promptsPath }
+        )
+    }
+}
+Invoke-AgentApi -Method Put -Path '/api/v2/extendedAgent/skills/sqlmi-performance' -Body $sqlMiSkillBody | Out-Null
+Write-Ok 'Skill: sqlmi-performance'
 
 Write-Step '[5/8] Uploading implementation knowledge'
 if (-not $SkipKnowledgeUpload) {

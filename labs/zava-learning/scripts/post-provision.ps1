@@ -6,7 +6,8 @@
   Run after the infra deployment (main.bicep) completes.
 #>
 param(
-  [string]$ResourceGroup = "rg-zava-learning-demo"
+  [string]$ResourceGroup = "rg-zava-learning-demo",
+  [switch]$SkipImageDeployment
 )
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -27,27 +28,29 @@ $services = @(
   @{ name = "gradebook-api";  path = "src\gradebook-api";  tag = "latest" }
 )
 
-foreach ($svc in $services) {
-  $img = "$($svc.name):$($svc.tag)"
-  Write-Host "Building $img from $($svc.path)..." -ForegroundColor Yellow
-  az acr build --registry $acr --image $img (Join-Path $repoRoot $svc.path) -o none
-}
-
 $quizImg = "quiz-service:$baseTag"
-Write-Host "Building $quizImg from src\quiz-service..." -ForegroundColor Yellow
-az acr build --registry $acr --image $quizImg (Join-Path $repoRoot "src\quiz-service") -o none
+if (-not $SkipImageDeployment) {
+  foreach ($svc in $services) {
+    $img = "$($svc.name):$($svc.tag)"
+    Write-Host "Building $img from $($svc.path)..." -ForegroundColor Yellow
+    az acr build --registry $acr --image $img (Join-Path $repoRoot $svc.path) -o none
+  }
 
-foreach ($svc in $services) {
-  $img = "$($acr).azurecr.io/$($svc.name):$($svc.tag)"
-  Write-Host "Updating container app $($svc.name) -> $img" -ForegroundColor Yellow
-  az containerapp update --resource-group $ResourceGroup --name $svc.name --image $img -o none
-}
+  Write-Host "Building $quizImg from src\quiz-service..." -ForegroundColor Yellow
+  az acr build --registry $acr --image $quizImg (Join-Path $repoRoot "src\quiz-service") -o none
 
-$quizImageRef = "$acr.azurecr.io/quiz-service:$baseTag"
-$laneApps = @("quiz-appgw", "quiz-app", "quiz-perf", "quiz-query", "quiz-pool", "quiz-secret", "quiz-nsg")
-foreach ($app in $laneApps) {
-  Write-Host "Updating container app $app -> $quizImageRef" -ForegroundColor Yellow
-  az containerapp update --resource-group $ResourceGroup --name $app --image $quizImageRef -o none
+  foreach ($svc in $services) {
+    $img = "$($acr).azurecr.io/$($svc.name):$($svc.tag)"
+    Write-Host "Updating container app $($svc.name) -> $img" -ForegroundColor Yellow
+    az containerapp update --resource-group $ResourceGroup --name $svc.name --image $img -o none
+  }
+
+  $quizImageRef = "$acr.azurecr.io/$quizImg"
+  $laneApps = @("quiz-appgw", "quiz-app", "quiz-perf", "quiz-query", "quiz-pool", "quiz-secret", "quiz-nsg")
+  foreach ($app in $laneApps) {
+    Write-Host "Updating container app $app -> $quizImageRef" -ForegroundColor Yellow
+    az containerapp update --resource-group $ResourceGroup --name $app --image $quizImageRef -o none
+  }
 }
 
 Write-Host "Opening PostgreSQL firewall for the deployer IP..." -ForegroundColor Yellow

@@ -32,7 +32,8 @@ resource "azurerm_linux_virtual_machine" "diagnostics" {
   }
 
   identity {
-    type = "SystemAssigned"
+    type         = length(var.user_assigned_identity_ids) > 0 ? "SystemAssigned, UserAssigned" : "SystemAssigned"
+    identity_ids = var.user_assigned_identity_ids
   }
 
   os_disk {
@@ -76,7 +77,7 @@ resource "azurerm_virtual_machine_extension" "network_watcher_agent" {
 resource "azurerm_monitor_data_collection_rule" "diagnostics" {
   name                = "dcr-${var.name_prefix}-diagnostics"
   resource_group_name = var.resource_group_name
-  location            = var.location
+  location            = var.data_collection_rule_location
   kind                = "Linux"
   tags                = var.tags
 

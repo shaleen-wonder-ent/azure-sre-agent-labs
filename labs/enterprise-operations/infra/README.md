@@ -55,24 +55,17 @@ Optional Entra diagnostics require Contributor at `/providers/Microsoft.aadiam`;
 
 ## State backend
 
-`backend.tf` declares an Azure Storage backend without embedding environment-specific values. Create the state resource group, storage account, and private container through your platform bootstrap, then create ignored `backend.hcl` values from [backend.hcl.example](backend.hcl.example). Use Entra authentication and do not place storage keys in the file.
+`backend.tf` uses local state for this short-lived workshop so the same workstation can plan, apply, and destroy the lab without separate bootstrap infrastructure. The state files are ignored by Git. Keep the state directory intact until teardown completes, and do not use this backend for shared or long-lived environments.
 
-For a local workshop state only, initialize with `-backend=false`. Do not use local state for shared or long-lived environments.
+For a shared deployment, change the backend to Azure Storage, create the state resource group, storage account, and private container through your platform bootstrap, then create ignored `backend.hcl` values from [backend.hcl.example](backend.hcl.example). Use Entra authentication and do not place storage keys in the file.
 
 ## Initialize and validate
 
 From this directory:
 
 ```powershell
-terraform init -backend-config=backend.hcl
+terraform init
 terraform fmt -check -recursive
-terraform validate
-```
-
-For local-state validation:
-
-```powershell
-terraform init -backend=false
 terraform validate
 ```
 
@@ -142,12 +135,17 @@ sqlmi_storage_size_gb        = 32
 sqlmi_license_type           = "LicenseIncluded"
 ```
 
-Supply the password only through a secure terminal or CI secret store:
+The module is Entra-only and does not accept a SQL administrator password. After deployment, run the
+idempotent initializer as the configured Entra administrator:
 
 ```powershell
-$env:TF_VAR_sqlmi_administrator_password = Read-Host -MaskInput 'SQL MI administrator password'
-terraform plan -out=sqlmi.tfplan
+pwsh ../scripts/Initialize-SqlMiDemo.ps1
 ```
+
+This lab currently uses delegated operator mode because tenant-level directory-read permission is
+unavailable to the SQL MI identity. The initializer and runtime bridge obtain a fresh Azure SQL token,
+pass it as a protected Managed Run Command parameter, and do not persist it. Use this fallback for the
+workshop only; prefer bounded managed identities for production.
 
 The module creates an exclusive delegated `/24`, NSG, and route table. It does not associate NAT Gateway because Azure SQL Managed Instance does not support NAT Gateway on its subnet. The public data endpoint is disabled and only the VNet-local FQDN is output.
 
@@ -184,6 +182,14 @@ Runtime checks:
 terraform output
 az rest --method get --url "https://management.azure.com$(terraform output -raw connection_monitor_id)?api-version=2022-07-01"
 pwsh ../scripts/Configure-SreAgent.ps1 -SkipKnowledgeUpload
+pwsh ../scripts/Invoke-SqlMiDemo.ps1 -Action Diagnose
+```
+
+The bounded SQL fault and reset are explicit writes:
+
+```powershell
+pwsh ../scripts/Invoke-SqlMiDemo.ps1 -Action Fault -DurationSeconds 600 -ApproveWrite
+pwsh ../scripts/Invoke-SqlMiDemo.ps1 -Action Reset -ApproveWrite
 ```
 
 Use the copy-ready investigations in [../prompts/scenario-prompts.md](../prompts/scenario-prompts.md). Optional scenarios should report missing permissions or resources as coverage gaps until their modules are enabled.

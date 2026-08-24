@@ -123,6 +123,24 @@ function Assert-Command([string]$Name) {
     }
 }
 
+function Get-BashCommand {
+    if (-not $IsWindows) {
+        Assert-Command 'bash'
+        return 'bash'
+    }
+
+    $candidates = @(
+        (Join-Path $env:ProgramFiles 'Git/bin/bash.exe'),
+        (Join-Path $env:ProgramFiles 'Git/usr/bin/bash.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs/Git/bin/bash.exe')
+    )
+    $gitBash = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $gitBash) {
+        throw "Git Bash was not found. Install Git for Windows with 'winget install Git.Git'."
+    }
+    return $gitBash
+}
+
 function Get-AzureContext {
     Assert-Command 'az'
     Assert-Command 'azd'
@@ -153,7 +171,7 @@ function Get-AzureContext {
 function Initialize-AzdEnvironment {
     param([object]$Lab, [pscustomobject]$AzureContext)
 
-    $environmentName = "$EnvironmentPrefix-$($Lab.id)"
+    $environmentName = "$EnvironmentPrefix-$($Lab.environmentSuffix)"
     Push-Location (Join-Path $repoRoot $Lab.path)
     try {
         & azd env select $environmentName 2>$null
@@ -196,8 +214,15 @@ function Invoke-LabDeployment {
         Invoke-CheckedCommand 'azd' @($Lab.azdCommand, '--environment', $environmentName, '--no-prompt')
 
         if ($Lab.postDeploy -like 'bash:*') {
-            Assert-Command 'bash'
-            Invoke-CheckedCommand 'bash' @(($Lab.postDeploy -split ':', 2)[1])
+            $bashCommand = Get-BashCommand
+            $originalPath = $env:PATH
+            try {
+                $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -notmatch '\\WindowsApps(?:\\|$)' }) -join ';'
+                Invoke-CheckedCommand $bashCommand @(($Lab.postDeploy -split ':', 2)[1])
+            }
+            finally {
+                $env:PATH = $originalPath
+            }
         }
         elseif ($Lab.postDeploy -like 'pwsh:*') {
             Invoke-CheckedCommand 'pwsh' @('-NoProfile', '-File', ($Lab.postDeploy -split ':', 2)[1])

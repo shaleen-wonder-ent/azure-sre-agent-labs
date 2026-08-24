@@ -16,10 +16,6 @@ var roles = [
     id: '43d0d8ad-25c7-4714-9337-8ba259a9fe05'
   }
   {
-    name: 'Monitoring Contributor'
-    id: '749f88d5-cbae-40b8-bcfc-e573ddc772fa'
-  }
-  {
     name: 'Log Analytics Reader'
     id: '73c42c96-874c-492b-b04d-ab87d138a893'
   }

@@ -53,8 +53,6 @@ resource "azurerm_mssql_managed_instance" "this" {
   storage_size_in_gb           = var.storage_size_gb
   subnet_id                    = azurerm_subnet.sqlmi.id
   vcores                       = var.vcores
-  administrator_login          = var.administrator_login
-  administrator_login_password = var.administrator_password
   minimum_tls_version          = "1.2"
   public_data_endpoint_enabled = false
   proxy_override               = "Redirect"
@@ -66,11 +64,18 @@ resource "azurerm_mssql_managed_instance" "this" {
     type = "SystemAssigned"
   }
 
+  azure_active_directory_administrator {
+    login_username                      = var.entra_administrator_login
+    object_id                           = var.entra_administrator_id
+    principal_type                      = "User"
+    tenant_id                           = var.tenant_id
+    azuread_authentication_only_enabled = true
+  }
+
   lifecycle {
-    precondition {
-      condition     = var.administrator_password != null && length(var.administrator_password) >= 16
-      error_message = "administrator_password must be supplied securely and contain at least 16 characters when SQL MI is enabled."
-    }
+    # AzureRM does not round-trip this inline block after import and otherwise attempts an invalid Entra-only disable.
+    ignore_changes = [azure_active_directory_administrator]
+
     precondition {
       condition     = var.storage_size_gb % 32 == 0
       error_message = "storage_size_gb must be a multiple of 32."
@@ -87,6 +92,12 @@ resource "azurerm_mssql_managed_instance" "this" {
     azurerm_subnet_network_security_group_association.sqlmi,
     azurerm_subnet_route_table_association.sqlmi,
   ]
+}
+
+resource "azurerm_mssql_managed_database" "demo" {
+  name                      = var.database_name
+  managed_instance_id       = azurerm_mssql_managed_instance.this.id
+  short_term_retention_days = 7
 }
 
 data "azurerm_monitor_diagnostic_categories" "sqlmi" {

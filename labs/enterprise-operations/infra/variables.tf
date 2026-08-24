@@ -25,6 +25,12 @@ variable "location" {
   default     = "centralindia"
 }
 
+variable "sre_agent_location" {
+  description = "Azure region supporting the Microsoft.App/agents preview resource."
+  type        = string
+  default     = "eastus2"
+}
+
 variable "environment" {
   description = "Short environment identifier used in names and tags."
   type        = string
@@ -237,6 +243,12 @@ variable "sqlmi_name" {
   nullable    = true
 }
 
+variable "sqlmi_database_name" {
+  description = "Dedicated database used by the SQL MI performance demonstration."
+  type        = string
+  default     = "sre_demo"
+}
+
 variable "sqlmi_sku_name" {
   description = "SQL MI SKU name."
   type        = string
@@ -266,18 +278,10 @@ variable "sqlmi_license_type" {
   }
 }
 
-variable "sqlmi_administrator_login" {
-  description = "SQL MI administrator login used only when the optional module is enabled."
+variable "sqlmi_entra_administrator_login" {
+  description = "Microsoft Entra login name assigned as the SQL MI administrator."
   type        = string
-  default     = "sqlmiadmin"
-}
-
-variable "sqlmi_administrator_password" {
-  description = "SQL MI administrator password. Supply via TF_VAR_sqlmi_administrator_password or a secure variable store."
-  type        = string
-  default     = null
-  nullable    = true
-  sensitive   = true
+  default     = "shaleent@microsoft.com"
 }
 
 variable "enable_secondary_subscription" {

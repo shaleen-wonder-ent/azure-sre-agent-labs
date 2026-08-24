@@ -11,13 +11,16 @@
 # =============================================================================
 set -uo pipefail
 
-# Windows compatibility: python3 may be 'python' on Windows
-if command -v python3 &>/dev/null; then
-  PYTHON=python3
-elif command -v python &>/dev/null; then
-  PYTHON=python
-else
-  echo "❌ ERROR: Python not found. Install Python 3."
+# Windows Store aliases can exist on PATH without launching Python, so probe candidates.
+PYTHON=""
+for candidate in python3 python; do
+  if command -v "$candidate" &>/dev/null && "$candidate" -c 'import sys' &>/dev/null; then
+    PYTHON="$candidate"
+    break
+  fi
+done
+if [ -z "$PYTHON" ]; then
+  echo "❌ ERROR: A working Python interpreter was not found. Install Python 3."
   echo "   Windows: winget install Python.Python.3.12"
   echo "   Then disable App execution aliases for python.exe in Settings."
   exit 1
