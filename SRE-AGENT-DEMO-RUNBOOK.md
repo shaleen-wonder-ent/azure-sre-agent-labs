@@ -1,9 +1,9 @@
 # Azure SRE Agent — Demo Runbook
 
-A recording-ready script for all 13 use cases. You run the **Setup** command(s) in PowerShell, paste the **Prompt** into the SRE Agent chat (start a **new thread** each time), and record the **Highlight**.
+A recording-ready script for all 14 use cases. You run the **Setup** command(s) in PowerShell, paste the **Prompt** into the SRE Agent chat (start a **new thread** each time), and record the **Highlight**.
 
 > Convention: `EO agent` = the enterprise-operations agent that hosts use cases 4 and 6–13.
-> Use cases 1, 2, 3, 5 run on their own lab agents (each lab deploys its own SRE Agent).
+> Use cases 1, 2, 3, 5, 14 run on their own lab agents (each lab deploys its own SRE Agent).
 
 ## Agents
 
@@ -12,6 +12,7 @@ A recording-ready script for all 13 use cases. You run the **Setup** command(s) 
 | `labs/enterprise-operations` | 4, 6, 7, 8, 9, 10, 11, 12, 13 | `sre-eops-lab-b684kg` — https://sre-eops-lab-b684kg--c6405182.daa74423.eastus2.azuresre.ai |
 | `labs/zava-learning` | 1, 2 (and 11 alt) | that lab's SRE Agent portal (shown after `azd up`) |
 | `labs/vm-cosmosdb` | 3, 5 | that lab's SRE Agent portal (shown after `azd up`) |
+| `labs/starter-lab` | 14 | `sre-agent-tlwg3rnc5h6pm` — https://sre-agent-tlwg3rnc5h6pm--9baa2d20.bc75887b.eastus2.azuresre.ai |
 
 ## One-time setup (do this ONCE before recording — not between demos)
 
@@ -25,11 +26,19 @@ cd labs\enterprise-operations
 .\scripts\Install-AgentSkill.ps1 -SkillName fleet-health           -SkillPath .\sre-config\skills\fleet-health\SKILL.md                                                                 # UC13
 ```
 
-After this, UC 8, 9, 11, 13 need **no per-demo setup**. UC 4, 6, 7, 10, 12 need one quick seed command each (below).
+For UC14, configure the GitHub deployment connection once from `labs\starter-lab`:
+
+```powershell
+.\scripts\Setup-GrubifyDeployment.ps1 -Repository shaleen-wonder-ent/grubify
+```
+
+This establishes GitHub Actions OIDC, resource-scoped deployment permissions, and repository values. The starter lab's post-provision step installs the `grubify-pr-delivery` skill, `incident-handler`, response plan, and write-approval hook.
+
+After this, UC 8, 9, 11, 13 need **no per-demo setup**. UC 4, 6, 7, 10, 12 need one quick seed command each (below). UC14 needs the vulnerable application state described below.
 
 ---
 
-## The 13 demos
+## The 14 demos
 
 All EO commands assume `cd labs\enterprise-operations`. Replace `<BLOCKED>`/`<BLOCKER>` in UC4 with the session IDs printed by Diagnose.
 
@@ -48,6 +57,43 @@ All EO commands assume `cd labs\enterprise-operations`. Replace `<BLOCKED>`/`<BL
 | 11 | Cost anomaly detection | EO agent | *(none — installed in one-time setup)* | `Use the cost-anomaly skill. Detect cost anomalies for this subscription over the last 7 days vs the prior baseline. Prefer live Cost Management; if unavailable, use the provided dataset and label it an estimate with its freshness lag. Rank drivers by absolute impact, correlate the top driver with deployment changes, separate new-resource cost from a true anomaly, project monthly impact, and give read-only savings recommendations.` | **SQL Managed Instance = dominant driver**; figures labeled **estimate, not billed**; correlates the real deployment |
 | 12 | Security incident investigation | EO agent | `.\scripts\Seed-SecurityIncident.ps1` (opens inbound RDP) — restore later with `-Cleanup` | `Security incident investigation for resource group rg-eops-uc6-lifecycle over the last 2 hours — a suspected NSG rule change. Attribute the change (who/when/where), identify the rule and port/protocol/source, scope blast radius from association and reachability, decide exposure vs compromise, and give approval-gated containment. Read-only.` | Verdict **EXPOSURE, not compromise**; blast radius scoped (**NSG unassociated → zero live traffic**); attribution with truncated IPs |
 | 13 | Multi-subscription health | EO agent | *(none — installed in one-time setup)* | `Use the fleet-health skill. Consolidated health overview across three scopes for the last 24 hours: Scope A = rg-sre-eops-lab, Scope B = rg-eops-uc6-lifecycle (subscription 09e7c1cb-53ca-4d05-bcf0-8881c42e680e), Scope C = subscription 11111111-2222-3333-4444-555555555555. Coverage-check each scope first, normalize severity, dedupe, and give one estate status. Do not mark unknown or critical scopes as healthy. Read-only.` | **Scope C reported as a blind spot (Unknown, not green)**; estate status not healthy while a scope is unknown; A healthy vs B degraded |
+| 14 | App-centric OOM → fix PR → deploy | Starter Lab agent / Grubify API | Deploy the vulnerable Grubify API state, then run `bash scripts/break-app.sh` from `labs\starter-lab` | *(none — Azure Monitor automatically routes the HTTP 5xx alert to `incident-handler` in autonomous mode)* | Correlates **cart HTTP 5xx + `OutOfMemoryException`** with the unbounded 10 MB allocation; creates a minimal fix PR; a **human merges**; GitHub Actions deploys an immutable SHA image and verifies `/health` |
+
+---
+
+## UC14 — App-centric OOM incident to deployed fix
+
+### Recording precondition
+
+For the complete incident-to-code story, the connected Grubify repository's `main` branch and the deployed image must both contain the intentional defect in `GrubifyApi/Controllers/CartController.cs`: every cart request retains a 10 MB allocation in an unbounded static collection. If `main` already contains the merged fix, deploying an old image will reproduce the OOM alert, but the agent should correctly report **deployment drift / outdated image** instead of opening another meaningful code-fix PR.
+
+### Setup and induce the incident
+
+From `labs\starter-lab`, confirm the app starts healthy, then run:
+
+```powershell
+& "C:\Program Files\Git\bin\bash.exe" ".\scripts\break-app.sh"
+```
+
+The default run sends 200 cart requests at 0.5-second intervals. On the vulnerable build, successful requests each retain 10 MB until the .NET managed heap is exhausted. Cart requests begin returning HTTP 5xx even if the Container Apps `RestartCount` metric remains zero.
+
+### Record the autonomous response
+
+1. Open https://sre.azure.com → **Activities → Incidents**.
+2. Select `[Sev3] alert-http-5xx-srelab-starter`. The alert can fire and resolve quickly, so include closed/recent incidents if it is no longer active.
+3. Show the agent correlating Azure Monitor, Application Insights, console logs, and the connected repository.
+4. Show the confirmed RCA: `CartController.AddItemToCart` retains a 10 MB `byte[]` per request in a static list with no eviction.
+5. Open the agent-created GitHub PR and show that it changes only the defective cart code and includes evidence, validation, rollout, and rollback details.
+6. Emphasize the approval boundary: the agent may create the branch and PR, but it must not approve, merge, or deploy.
+7. Merge the PR manually and record **Actions → Deploy Grubify API** building `grubify-api:<commit-sha>`, updating the Container App, and validating `/health`.
+8. Run `break-app.sh` again. The expected result is 200 successes, zero errors, HTTP 200 health, and **No memory-leak failure detected**.
+
+### Expected timing
+
+- Load generation: about 2–4 minutes.
+- Azure Monitor alert and SRE incident: usually within 5–8 minutes.
+- Agent investigation and PR creation: about 5–10 minutes after incident ingestion.
+- GitHub Actions deployment after human merge: about 3–6 minutes.
 
 ---
 
@@ -62,9 +108,12 @@ cd labs\enterprise-operations
 
 Lab agents for UC1/2 restore with the matching `fix-*.ps1` (e.g. `pwsh .\chaos\fix-app.ps1`, `pwsh .\chaos\fix-nsg.ps1`). The vm-cosmosdb CPU stress (UC3) self-clears after 10 minutes.
 
+For UC14, the merged PR is the normal reset: keep the fixed `main` branch and verify `break-app.sh` reports no memory-leak failure. To record the complete PR flow again, deliberately restore the vulnerable code on `main` through a reviewed commit and let the deployment workflow publish that commit before running the load. Do not merely point the Container App at an old vulnerable image when the connected repository already contains the fix; that demonstrates deployment drift, not autonomous code remediation.
+
 ## Tips for smooth recording
 
 - Start a **new thread** for every prompt — skills load per thread.
 - Seed EO scenarios 4, 6, 7, 10, 12 **~2 minutes before** their prompt so Activity Log ingestion completes (deployment history for UC10 is instant).
 - UC 8, 9, 11, 13 are dataset/analysis scenarios with **no live seed** — run them anytime.
+- UC14 is event-driven and needs no chat prompt. Keep the incidents view on recent/closed incidents because the agent may close the alert after creating the PR.
 - If a prompt returns "agent is busy", wait a few seconds and re-open the thread; the answer is still generating.
