@@ -24,12 +24,14 @@ Deploy an Azure SRE Agent, break a sample app, and watch it diagnose and fix the
 | Component | Purpose |
 |-----------|---------|
 | **Knowledge Base** | HTTP error runbook, app architecture docs |
-| **incident-handler** | Investigates using logs, KQL, runbooks |
-| **code-analyzer** | Same + source code search, creates GitHub issues |
+| **incident-handler** | Investigates alerts, correlates source, and opens an RCA-backed fix PR |
+| **code-analyzer** | Source-assisted root cause analysis |
 | **issue-triager** | Triages customer issues with labels and comments |
 | **public-exposure-auditor** | Read-only audit of accidental public network exposure |
 | **Response Plan** | Routes alerts to custom agents autonomously |
 | **GitHub OAuth** | Code search + issue management (optional) |
+| **grubify-pr-delivery** | Creates a minimal fix branch and PR; never merges or deploys |
+| **grubify-write-approval** | Blocks merge, deployment, secret access, and unrelated writes |
 | **Scheduled Tasks** | Daily public exposure audit; issue triage every 12 hours (optional) |
 | **Global Tools** | DevOps + Python plotting enabled |
 
@@ -38,7 +40,7 @@ Deploy an Azure SRE Agent, break a sample app, and watch it diagnose and fix the
 | # | Scenario | Persona | GitHub Required? |
 |---|----------|---------|:---:|
 | 1 | **Break app → Agent investigates logs + remediates** | IT Operations | No |
-| 2 | **Same break → Agent finds root cause in source code + creates GitHub issue** | Developer + IT | Yes |
+| 2 | **Container restarts → Agent diagnoses → PR → human merge → deploy** | Developer + IT | Yes |
 | 3 | **Triage customer issues → classify, label, comment** | Workflow Automation | Yes |
 | 4 | **Audit accidental public exposure → evidence + remediation plan** | Security + Platform | No |
 
@@ -143,15 +145,32 @@ bash scripts/break-app.sh
 
 > **Automated Alert:** After 10-15 min, check **Activities → Incidents** — Azure Monitor may have fired an alert and the agent investigated autonomously.
 
-## Scenario 2: Developer (Requires GitHub)
+## Scenario 2: Incident to Fix PR and Deployment (Requires GitHub)
 
-Same break as Scenario 1, but the agent also:
-- Searches Grubify source code for the root cause
-- Finds exact file:line causing the memory leak
-- Creates a GitHub issue with code references and fix suggestion
-- May create a PR with the fix
+One-time deployment connection setup from PowerShell:
 
-> If the agent can't create an issue, nudge it: `Use the GitHub API to create the issue if the direct tool isn't working`
+```powershell
+cd labs/starter-lab
+./scripts/Setup-GrubifyDeployment.ps1 -Repository <owner>/grubify
+```
+
+This creates a secretless GitHub Actions OIDC trust limited to the repository's `main`
+branch, assigns `AcrPush` on the lab registry and `Container Apps Contributor` on the
+Grubify API only, and configures the workflow's repository values.
+
+1. Run `bash scripts/break-app.sh`, then add items to the cart until the API restarts.
+2. Open **Activities → Incidents** and select the container restart incident.
+3. If demonstrating manually before the alert arrives, prompt the `incident-handler`:
+   ```text
+   Investigate the Grubify API restart and cart failures. Correlate Azure telemetry with
+   source in the connected Grubify repository. If the evidence proves a code defect, use
+   grubify-pr-delivery to create the smallest fix PR. Do not merge or deploy it.
+   ```
+4. Confirm the incident contains telemetry evidence, root cause, validation, and a PR URL.
+5. Review the PR diff and checks, then merge it manually. The agent must not merge it.
+6. Watch **Actions → Deploy Grubify API**. It builds `grubify-api:<commit-sha>`, updates
+   the Container App, and fails unless `/health` succeeds.
+7. Confirm the incident recovers and the cart no longer causes container restarts.
 
 ## Scenario 3: Workflow Automation (Requires GitHub)
 

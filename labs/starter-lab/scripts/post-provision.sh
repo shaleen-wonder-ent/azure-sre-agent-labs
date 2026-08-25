@@ -285,6 +285,27 @@ create_subagent() {
   fi
 }
 
+create_skill() {
+  local skill_file="$1"
+  local skill_name="$2"
+  local description="$3"
+  local token
+  token=$(get_token)
+  local content
+  content=$($PYTHON -c "import json,sys; print(json.dumps(open(sys.argv[1], encoding='utf-8').read().replace('GITHUB_REPO_PLACEHOLDER', sys.argv[2])))" "$skill_file" "$GITHUB_REPO")
+  local body
+  body="{\"name\":\"${skill_name}\",\"type\":\"Skill\",\"properties\":{\"description\":\"${description}\",\"skillContent\":${content}}}"
+  local http_code
+  http_code=$(echo "$body" | curl -s -o /dev/null -w "%{http_code}" \
+    -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/skills/${skill_name}" \
+    -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" -d @-)
+  if [[ "$http_code" =~ ^20[0-4]$ ]]; then
+    echo "   ✅ Skill: ${skill_name}"
+  else
+    echo "   ⚠️  Skill ${skill_name} returned HTTP ${http_code}"
+  fi
+}
+
 # ── Helper: Check if something exists (for --retry mode) ─────────────────────
 check_kb_files() {
   local token=$(get_token)
@@ -338,6 +359,7 @@ echo ""
 echo "🤖 Step 2/5: Creating/updating incident-handler subagent..."
 if [ -n "$GITHUB_REPO" ]; then
   echo "   Using full config with GitHub tools"
+  create_skill "sre-config/skills/grubify-pr-delivery/SKILL.md" "grubify-pr-delivery" "Create a minimal RCA-backed Grubify fix pull request without merging or deploying."
   create_subagent "sre-config/agents/incident-handler-full.yaml" "incident-handler"
 else
   echo "   Using core config without GitHub tools"
@@ -440,6 +462,23 @@ echo ""
 # ── Step 4: GitHub integration ───────────────────────────────────────────────
 if [ -n "$GITHUB_REPO" ]; then
 echo "🔗 Step 4/5: GitHub integration..."
+
+# Block GitHub merge/deploy and unrelated operational writes. PR creation remains allowed;
+# a human merge is the deployment approval boundary.
+TOKEN=$(get_token)
+HOOK_BODY=$($PYTHON -c '
+import json
+prompt = """Review the response for GitHub or Azure writes. Allow only creation of a branch, commit, and pull request in the configured Grubify repository when backed by incident evidence. Reject merges, approvals, force-pushes, workflow or repository setting changes, direct deployments, secret access, and unrelated Azure writes. Require a human to merge the pull request.\n\n$ARGUMENTS"""
+print(json.dumps({"name":"grubify-write-approval","type":"GlobalHook","properties":{"eventType":"Stop","activationMode":"always","description":"Allows an evidence-backed Grubify PR but blocks merge, deployment, secret access, and unrelated writes.","hook":{"type":"prompt","prompt":prompt,"model":"ReasoningFast","timeout":30,"failMode":"Block","maxRejections":3}}}))
+')
+HTTP_CODE=$(echo "$HOOK_BODY" | curl -s -o /dev/null -w "%{http_code}" \
+  -X PUT "${AGENT_ENDPOINT}/api/v2/extendedAgent/hooks/grubify-write-approval" \
+  -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" -d @-)
+if [[ "$HTTP_CODE" =~ ^20[0-4]$ ]]; then
+  echo "   ✅ Approval hook: grubify-write-approval"
+else
+  echo "   ⚠️  Approval hook returned HTTP ${HTTP_CODE}"
+fi
 
 # Create GitHub OAuth connector via data plane API (no PAT needed)
 echo "   Creating GitHub OAuth connector..."

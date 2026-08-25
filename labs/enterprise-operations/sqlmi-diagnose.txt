@@ -1,0 +1,138 @@
+Action:          Diagnose
+Execution state: Succeeded
+
+Output:
+=== Result set 1 (1 row(s)) ===
+  database_name: sre_demo
+  server_name: sqlmi-lab-b684kg.f475ed82b465.database.windows.net
+  captured_utc: 2026-08-25T06:38:30.9228659
+
+=== Result set 2 (4 row(s)) ===
+Row 1
+  session_id: 87
+  blocking_session_id: 75
+  wait_type: LCK_M_X
+  wait_time: 402016
+  wait_resource: KEY: 5:72057594045726720 (8194443284a0)
+  status: suspended
+  command: UPDATE
+
+Row 2
+  session_id: 75
+  blocking_session_id: 0
+  wait_type: WAITFOR
+  wait_time: 405003
+  wait_resource: 
+  status: suspended
+  command: WAITFOR
+
+Row 3
+  session_id: 117
+  blocking_session_id: 0
+  wait_type: XE_LIVE_TARGET_TVF
+  wait_time: 33102
+  wait_resource: 
+  status: suspended
+  command: SELECT
+
+Row 4
+  session_id: 123
+  blocking_session_id: 0
+  wait_type: XE_LIVE_TARGET_TVF
+  wait_time: 4011
+  wait_resource: 
+  status: suspended
+  command: SELECT
+
+=== Result set 3 (10 row(s)) ===
+Row 1
+  query_id: 25
+  object_id: 0
+  last_execution_time: 2026-08-25T06:16:51.3630000+00:00
+  count_executions: 1
+  avg_duration: 98.0
+  avg_cpu_time: 98.0
+  avg_logical_io_reads: 2.0
+
+Row 2
+  query_id: 35
+  object_id: 0
+  last_execution_time: 2026-08-25T05:46:51.2900000+00:00
+  count_executions: 1
+  avg_duration: 170.0
+  avg_cpu_time: 170.0
+  avg_logical_io_reads: 3.0
+
+Row 3
+  query_id: 25
+  object_id: 0
+  last_execution_time: 2026-08-25T05:46:50.6630000+00:00
+  count_executions: 1
+  avg_duration: 119.0
+  avg_cpu_time: 119.0
+  avg_logical_io_reads: 2.0
+
+Row 4
+  query_id: 35
+  object_id: 0
+  last_execution_time: 2026-08-25T05:16:50.5900000+00:00
+  count_executions: 1
+  avg_duration: 164.0
+  avg_cpu_time: 164.0
+  avg_logical_io_reads: 3.0
+
+Row 5
+  query_id: 25
+  object_id: 0
+  last_execution_time: 2026-08-25T05:16:50.5670000+00:00
+  count_executions: 1
+  avg_duration: 93.0
+  avg_cpu_time: 93.0
+  avg_logical_io_reads: 2.0
+
+Row 6
+  query_id: 35
+  object_id: 0
+  last_execution_time: 2026-08-25T04:46:50.4930000+00:00
+  count_executions: 1
+  avg_duration: 154.0
+  avg_cpu_time: 153.0
+  avg_logical_io_reads: 3.0
+
+Row 7
+  query_id: 25
+  object_id: 0
+  last_execution_time: 2026-08-25T04:46:50.4700000+00:00
+  count_executions: 1
+  avg_duration: 87.0
+  avg_cpu_time: 87.0
+  avg_logical_io_reads: 2.0
+
+Row 8
+  query_id: 35
+  object_id: 0
+  last_execution_time: 2026-08-25T04:16:50.4030000+00:00
+  count_executions: 1
+  avg_duration: 160.0
+  avg_cpu_time: 159.0
+  avg_logical_io_reads: 3.0
+
+Row 9
+  query_id: 25
+  object_id: 0
+  last_execution_time: 2026-08-25T04:16:50.3630000+00:00
+  count_executions: 1
+  avg_duration: 93.0
+  avg_cpu_time: 93.0
+  avg_logical_io_reads: 2.0
+
+Row 10
+  query_id: 35
+  object_id: 0
+  last_execution_time: 2026-08-25T03:46:50.3030000+00:00
+  count_executions: 1
+  avg_duration: 157.0
+  avg_cpu_time: 156.0
+  avg_logical_io_reads: 3.0
+
+

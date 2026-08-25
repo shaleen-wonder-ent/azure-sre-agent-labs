@@ -12,7 +12,7 @@
   it by reactivating the revision.
 #>
 param(
-  [string]$ResourceGroup = "rg-zava-learning-demo",
+  [string]$ResourceGroup = "rg-zava-learning-srelab-zava",
   [string]$AppName = "quiz-app"
 )
 . "$PSScriptRoot\_common.ps1"
@@ -26,11 +26,16 @@ if ($c1) { Invoke-GitPush -Message "Drop quiz app lane scale floor to zero" }
 else { Write-Host "  (quiz-app min replicas already 0 in source)" -ForegroundColor DarkGray }
 
 Write-Host "  2/2 Forcing the live quiz-app revision to zero replicas..." -ForegroundColor Gray
-$revs = az containerapp revision list -g $ResourceGroup -n $AppName -o json | ConvertFrom-Json
+$revsJson = az containerapp revision list -g $ResourceGroup -n $AppName -o json
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "[break-app] ERROR: could not list revisions for $AppName; fault state is unknown." -ForegroundColor Red
+  exit 1
+}
+$revs = $revsJson | ConvertFrom-Json
 $active = @($revs | Where-Object { $_.properties.active }) | Select-Object -First 1
 if (-not $active) {
-  Write-Host "[break-app] ERROR: no active revision on $AppName — fault NOT applied; not paging." -ForegroundColor Red
-  exit 1
+  Write-Host "[break-app] Fault already live. $AppName has no active revision." -ForegroundColor Red
+  exit 0
 }
 az containerapp revision deactivate -g $ResourceGroup -n $AppName --revision $active.name -o none
 Start-Sleep -Seconds 8

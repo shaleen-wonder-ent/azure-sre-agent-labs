@@ -71,6 +71,7 @@ app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 app.MapControllers();
 
 app.Run();

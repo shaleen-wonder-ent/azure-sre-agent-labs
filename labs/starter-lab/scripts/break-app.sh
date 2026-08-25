@@ -15,13 +15,15 @@
 set -e
 
 # Configuration
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REQUEST_COUNT=${2:-200}
 SLEEP_INTERVAL=${3:-0.5}
 
 # Get Container App URL from azd environment or argument
 APP_URL="${1:-}"
 if [ -z "$APP_URL" ]; then
-  APP_URL=$(azd env get-values 2>/dev/null | grep "^CONTAINER_APP_URL=" | cut -d'=' -f2 | tr -d '"')
+  APP_URL=$(cd "$PROJECT_DIR" && azd env get-values 2>/dev/null | grep "^CONTAINER_APP_URL=" | cut -d'=' -f2 | tr -d '"')
 fi
 
 if [ -z "$APP_URL" ]; then

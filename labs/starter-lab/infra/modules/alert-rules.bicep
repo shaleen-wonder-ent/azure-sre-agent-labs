@@ -73,3 +73,38 @@ resource http5xxAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     ]
   }
 }
+
+// Container health signal: repeated restarts indicate OOMs, crashes, or failed health probes.
+resource restartAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'alert-container-restarts-${environmentName}'
+  location: 'global'
+  properties: {
+    description: 'Alert when the Grubify API container restarts repeatedly - triggers SRE Agent investigation'
+    severity: 2
+    enabled: true
+    scopes: [
+      containerAppId
+    ]
+    evaluationFrequency: 'PT1M'
+    windowSize: 'PT5M'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          name: 'containerRestarts'
+          metricName: 'RestartCount'
+          metricNamespace: 'Microsoft.App/containerApps'
+          operator: 'GreaterThan'
+          threshold: 1
+          timeAggregation: 'Maximum'
+          criterionType: 'StaticThresholdCriterion'
+        }
+      ]
+    }
+    actions: [
+      {
+        actionGroupId: actionGroup.id
+      }
+    ]
+  }
+}
