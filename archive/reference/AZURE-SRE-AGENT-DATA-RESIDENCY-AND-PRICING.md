@@ -128,15 +128,18 @@ active-flow AAUs (task) =
   + (cache_write_tokens / 1,000,000) × cache_write_rate
 ```
 
-**AAU rates per 1 million tokens** (set at the agent level by your chosen model provider):
+**AAU rates per 1 million tokens.** You choose the model **provider** at the agent level — SRE Agent
+offers **Anthropic** (Claude models) and **Azure OpenAI** (GPT models, served through Microsoft
+Foundry). The provider/model you pick sets your rates:
 
-| Model | Input | Output | Cache read | Cache write |
-|---|---:|---:|---:|---:|
-| Claude Opus 4.6 | 100 | 500 | 10 | 125 |
-| GPT 5.3 Codex | 35 | 280 | 3.5 | 0 |
-| GPT 5.2 | 35 | 280 | 3.5 | 0 |
+| Provider | Model | Input | Output | Cache read | Cache write |
+|---|---|---:|---:|---:|---:|
+| Anthropic | Claude Opus 4.6 | 100 | 500 | 10 | 125 |
+| Azure OpenAI | GPT 5.3 Codex | 35 | 280 | 3.5 | 0 |
+| Azure OpenAI | GPT 5.2 | 35 | 280 | 3.5 | 0 |
 
-*(Azure may add models/providers and update rates over time.)*
+*(Specific model versions and rates change over time; Azure may add more. Confirm the current list in
+your agent's settings and on the pricing page.)*
 
 **Worked example — a "quick question" on Claude Opus 4.6:**
 
@@ -156,7 +159,39 @@ active-flow AAUs (task) =
 | Incident investigation (automated from Azure Monitor) | ~35.3 | ~11.7 |
 | Full remediation ("diagnose and fix the failing deployment") | ~86.5 | ~30.1 |
 
-### 3.3 Estimating your monthly cost
+### 3.3 End-to-end example — "report all under-utilized VMs"
+
+> **Prompt:** *"Generate a report of all under-utilized VMs in the subscription over the last 30 days."*
+
+**The important part:** active flow is metered on the **tokens** the task consumes — **not** on the
+~3 minutes it runs. A longer run costs more only if it does more work (more tool calls / more data =
+more tokens). Time the agent spends **waiting for your approval is never billed**.
+
+This is a read-only **investigation + report** task (the agent plans, runs several metric / Resource
+Graph queries across your VMs, aggregates, and writes a report), so its token profile is comparable to
+Microsoft's *incident-investigation* example. Illustrative token counts and the AAU math:
+
+| Token type | Tokens | Opus 4.6 rate/1M | Opus AAUs | GPT 5.3 Codex rate/1M | GPT AAUs |
+|---|---:|---:|---:|---:|---:|
+| Input (prompt, tool results, context) | 200K | 100 | 20.00 | 35 | 7.00 |
+| Output (the report + reasoning) | 15K | 500 | 7.50 | 280 | 4.20 |
+| Cache read (repeated context) | 150K | 10 | 1.50 | 3.5 | 0.53 |
+| Cache write (context cached for reuse) | 50K | 125 | 6.25 | 0 | 0.00 |
+| **Active-flow total** | | | **~35.3 AAU** | | **~11.7 AAU** |
+
+**Turn AAU into money** (using the ~$0.10/AAU listed example — confirm your region/currency):
+
+| | Claude Opus 4.6 | GPT 5.3 Codex |
+|---|---:|---:|
+| Active flow (this one task) | ~35.3 AAU → **~$3.53** | ~11.7 AAU → **~$1.17** |
+| Always-on during the ~3-min run | 4 AAU/hr × 0.05 hr = 0.2 AAU → **~$0.02** | ~$0.02 |
+
+The always-on charge (4 AAU/hr) accrues in the background whether or not you run this task — the ~$0.02
+above is just the slice that overlaps the run. So the **marginal cost of this report ≈ its active-flow
+figure** (~$3.5 on Opus, ~$1.2 on GPT). Run it as a **scheduled task** with a VM-rightsizing skill to
+keep the agent grounded and concise, which trims tokens on every run.
+
+### 3.4 Estimating your monthly cost
 
 ```
 monthly cost ≈ (4 AAUs/hour × hours the agent exists)          ← always-on, fixed
@@ -168,7 +203,7 @@ monthly cost ≈ (4 AAUs/hour × hours the agent exists)          ← always-on,
 One agent can cover **multiple workloads** within its scope — consolidating reduces always-on cost
 versus running many agents.
 
-### 3.4 Keeping cost predictable
+### 3.5 Keeping cost predictable
 
 - **Monthly active-flow limit** (Settings → Agent consumption): set a cap between **500 and 1,000,000 AAUs**. On hitting it, the agent becomes unavailable for chat/actions until next month; **always-on still bills**.
 - **Billing impact by action:**
