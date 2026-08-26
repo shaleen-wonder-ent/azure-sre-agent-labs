@@ -13,7 +13,7 @@ public-port labs, and enable only the optional modules needed for a workshop.
 Use cases 4 and 6–13 are implemented on the enterprise-operations agent with checked-in skills, seed
 scripts, and (for 8, 9, 11) labeled datasets. Use cases 1, 2, 3, and 5 run on the Zava Learning and
 vm-cosmosdb labs. For a recording-ready walkthrough of every use case — the exact setup command, the
-prompt to paste, and what to highlight — see the [demo runbook](../../../SRE-AGENT-DEMO-RUNBOOK.md).
+prompt to paste, and what to highlight — see the [demo runbook](../../../archive/reference/SRE-AGENT-DEMO-RUNBOOK.md).
 
 Scenarios that need data the fresh lab cannot provide use a clearly-provenanced dataset kept only in
 the fixture file (Entra sign-ins for 8, metric history for 9, cost detail for 11); the agent always

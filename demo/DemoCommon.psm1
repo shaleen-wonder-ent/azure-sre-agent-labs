@@ -5,7 +5,7 @@
   These functions keep every warm-up script consistent: prerequisite checks,
   Git Bash discovery, resource-group verification, and copy-paste prompt output.
   The scripts are thin wrappers around the proven per-lab break-*/Seed-*/configure-*
-  scripts described in SRE-AGENT-DEMO-RUNBOOK.md.
+  scripts described in archive/reference/SRE-AGENT-DEMO-RUNBOOK.md.
 #>
 
 Set-StrictMode -Version Latest

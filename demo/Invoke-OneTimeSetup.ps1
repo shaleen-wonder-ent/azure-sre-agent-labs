@@ -7,7 +7,7 @@
   and the write-approval hook, then installs the four dataset skills used by
   UC8/9/11/13. Optionally wires the Grubify GitHub deployment used by UC14.
 
-  Mirrors the "One-time setup" block in SRE-AGENT-DEMO-RUNBOOK.md.
+  Mirrors the "One-time setup" block in archive/reference/SRE-AGENT-DEMO-RUNBOOK.md.
 
 .PARAMETER IncludeGrubifyGitHub
   Also run labs/starter-lab/scripts/Setup-GrubifyDeployment.ps1 (requires 'gh auth login'

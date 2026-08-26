@@ -2,11 +2,11 @@
 
 A recording-ready script for all 14 use cases. You run the **Setup** command(s) in PowerShell, paste the **Prompt** into the SRE Agent chat (start a **new thread** each time), and record the **Highlight**.
 
-> **Automated warm-up:** every use case below has a one-command wrapper in [`demo/`](demo/) that runs
+> **Automated warm-up:** every use case below has a one-command wrapper in [`demo/`](../../demo/) that runs
 > the setup, waits for ingestion where needed, and prints the exact prompt — e.g.
 > `pwsh ./demo/Warmup-UC06-ResourceLifecycle.ps1`. The one-time setup block is wrapped by
 > `pwsh ./demo/Invoke-OneTimeSetup.ps1`. The manual commands in the table still work; the wrappers
-> just make them consistent and hard to get wrong. See [demo/README.md](demo/README.md).
+> just make them consistent and hard to get wrong. See [demo/README.md](../../demo/README.md).
 
 > Convention: `EO agent` = the enterprise-operations agent that hosts use cases 4 and 6–13.
 > Use cases 1, 2, 3, 5, 14 run on their own lab agents (each lab deploys its own SRE Agent).

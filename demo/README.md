@@ -1,7 +1,7 @@
 # Demo toolkit — one script per use case
 
 This folder makes the recorded SRE Agent demos easy to reproduce. Every use case in
-[SRE-AGENT-DEMO-RUNBOOK.md](../SRE-AGENT-DEMO-RUNBOOK.md) has a matching PowerShell
+[the demo runbook](../archive/reference/SRE-AGENT-DEMO-RUNBOOK.md) has a matching PowerShell
 **warm-up script** that checks prerequisites, injects the fault or seeds the incident,
 and prints the exact prompt to paste into the agent.
 

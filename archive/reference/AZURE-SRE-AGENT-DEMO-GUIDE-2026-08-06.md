@@ -6,11 +6,11 @@
 
 > **One-sentence summary:** Azure SRE Agent is an AI-powered operations teammate that connects telemetry, Azure resources, incident systems, source code, and operational knowledge to investigate issues, explain root cause, recommend or execute mitigations, and automate recurring reliability work within configured permissions and guardrails.
 
-> **Companion:** For the Azure-native use-case catalog (13 scenarios mapped to labs and Azure data sources), see [AZURE-SRE-AGENT-USE-CASES.md](AZURE-SRE-AGENT-USE-CASES.md). This guide and that catalog are **Azure-centric**; third-party and on-premises scenarios are parked under [`archive/`](archive/) and discussed separately.
+> **Companion:** For the Azure-native use-case catalog (13 scenarios mapped to labs and Azure data sources), see [AZURE-SRE-AGENT-USE-CASES.md](AZURE-SRE-AGENT-USE-CASES.md). This guide and that catalog are **Azure-centric**; third-party and on-premises scenarios are parked under [`archive/`](../) and discussed separately.
 
-> **Deploy & record fast:** Provision the labs with [`Deploy-SreAgentLabs.ps1`](Deploy-SreAgentLabs.ps1)
+> **Deploy & record fast:** Provision the labs with [`Deploy-SreAgentLabs.ps1`](../../Deploy-SreAgentLabs.ps1)
 > (interactive scenario picker, cost/readiness warnings, and GitHub prompts for the connected labs).
-> Then use the one-command warm-up scripts in [`demo/`](demo/) — one per use case — to seed each
+> Then use the one-command warm-up scripts in [`demo/`](../../demo/) — one per use case — to seed each
 > incident and print the exact prompt. The full recording script is in
 > [SRE-AGENT-DEMO-RUNBOOK.md](SRE-AGENT-DEMO-RUNBOOK.md).
 

@@ -186,7 +186,7 @@ labs/enterprise-operations/
 ```
 
 For a recording-ready walkthrough of all 13 use cases (setup command, prompt, and what to
-highlight), see the [demo runbook](../../SRE-AGENT-DEMO-RUNBOOK.md).
+highlight), see the [demo runbook](../../archive/reference/SRE-AGENT-DEMO-RUNBOOK.md).
 
 
 Start with the [Terraform operator guide](infra/README.md). It documents prerequisites, remote
