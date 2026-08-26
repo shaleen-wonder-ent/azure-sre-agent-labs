@@ -396,7 +396,7 @@ SRE Agent. Prefer this evidence order:
     retention or an external archive only where compliance or incident history
     requires it.
 
-For every onboarded signal, HCL should agree an **ingestion contract** with the
+For every onboarded signal, the platform team should agree an **ingestion contract** with the
 customer: operational question, source, categories, expected GB/day, table plan,
 retention, alert dependency, monthly budget, and owner. No source should be
 enabled with an unbounded "all logs" setting merely because an agent might use
