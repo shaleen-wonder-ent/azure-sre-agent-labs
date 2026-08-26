@@ -6,10 +6,10 @@ command, and watch the agent investigate, explain the root cause, and remediate 
 You do **not** need to be an SRE expert. Follow the three steps below.
 
 ```
-  ┌─────────────┐     ┌──────────────────┐     ┌────────────────────────────┐
-  │ 1. DEPLOY   │ ──▶ │ 2. WARM UP       │ ──▶ │ 3. WATCH / FIX             │
-  │ labs + agent│     │ trigger incident │     │ agent investigates & fixes │
-  └─────────────┘     └──────────────────┘     └────────────────────────────┘
+  ┌─────────────┐      ┌──────────────────┐     ┌────────────────────────────┐
+  │ 1. DEPLOY   │ ──>  │ 2. WARM UP       │ ──> │ 3. WATCH / FIX             │
+  │ labs + agent│      │ trigger incident │     │ agent investigates & fixes │
+  └─────────────┘      └──────────────────┘     └────────────────────────────┘
    Deploy-Sre...ps1     demo/Warmup-UC*.ps1      https://sre.azure.com
 ```
 
