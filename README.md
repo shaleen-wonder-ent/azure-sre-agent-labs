@@ -162,6 +162,32 @@ Full per-use-case breakdown with citations: [Telemetry Cost & Consumption Eviden
 
 ---
 
+## Regions, data residency & pricing
+
+**Before you deploy in a customer tenant, know two things:**
+
+**1. Where your data is processed.** The agent runs in **one region** you pick, and that region is
+where its compute/processing lives. With RBAC it can manage resources in **any** region or
+subscription you grant — so the agent's region is *not* its reach. If Azure SRE Agent isn't available
+in your country yet and you deploy it elsewhere, the agent's processing happens in **that other
+region**. Key transparency facts:
+
+- The agent does **not** copy your raw logs/metrics into a separate store — it keeps *synthesized*
+  summaries, conversation threads, and memory (all in **per-agent**, isolated storage; nothing shared
+  between customers).
+- It's **RBAC-scoped to the resource groups you choose**, uses **secretless, short-lived credentials**,
+  and in **Review mode nothing that writes runs without your approval**.
+- Telemetry goes to **your own** Application Insights.
+
+**2. What it costs.** Billing is in **Azure Agent Units (AAU)** = a fixed **always-on** charge
+(**4 AAU/agent-hour**, until the agent is deleted) **plus** a variable **active-flow** charge metered
+from LLM tokens (input/output/cache), billed **only while the agent is actively working**.
+
+➡️ Full detail — supported regions list, what is/isn't stored, the token→AAU formula, model rates, and
+cost controls: **[Regions, Data Residency & Pricing](archive/reference/AZURE-SRE-AGENT-DATA-RESIDENCY-AND-PRICING.md)**.
+
+---
+
 ## Repository layout
 
 | Path | What it is |
@@ -170,7 +196,7 @@ Full per-use-case breakdown with citations: [Telemetry Cost & Consumption Eviden
 | [demo/](demo/) | One warm-up script per use case + the one-time setup ([demo/README.md](demo/README.md)). |
 | [labs/](labs/) | The deployable labs (each has its own `azd` project and README). |
 | [deployment/scenarios.json](deployment/scenarios.json) | Use-case → lab manifest used by the launcher. |
-| [archive/reference/](archive/reference/) | Deep-dive docs: use-case catalog, cost evidence, product guide, demo runbook. |
+| [archive/reference/](archive/reference/) | Deep-dive docs: use-case catalog, cost evidence, regions/data-residency/pricing, product guide, demo runbook. |
 | [archive/](archive/) | Parked content: third-party labs, the `sreagent-templates` toolkit, and [resources & links](archive/resources.md). |
 
 ---
@@ -179,6 +205,7 @@ Full per-use-case breakdown with citations: [Telemetry Cost & Consumption Eviden
 
 - **Product overview & scope model:** [Demo Guide](archive/reference/AZURE-SRE-AGENT-DEMO-GUIDE-2026-08-06.md)
 - **Use-case catalog (data sources, run modes):** [Use Cases](archive/reference/AZURE-SRE-AGENT-USE-CASES.md)
+- **Regions, data residency & pricing:** [Data Residency & Pricing](archive/reference/AZURE-SRE-AGENT-DATA-RESIDENCY-AND-PRICING.md)
 - **Videos, blogs, and community links:** [archive/resources.md](archive/resources.md)
 - **Report issues:** <https://github.com/microsoft/sre-agent/issues>
 - **Security policy:** [SECURITY.md](SECURITY.md) · **License:** [LICENSE](LICENSE)

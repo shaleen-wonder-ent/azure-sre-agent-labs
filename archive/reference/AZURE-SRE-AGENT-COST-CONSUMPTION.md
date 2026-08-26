@@ -296,6 +296,11 @@ This is technically important because:
 | 7 | [Entra ID sign-in logs](https://learn.microsoft.com/en-us/entra/identity/monitoring-health/concept-sign-ins) |
 | 8 | [Azure Cost Management pricing](https://azure.microsoft.com/en-us/pricing/details/cost-management/) |
 
+> **Two different cost dimensions:** this document covers **telemetry ingestion** cost (what you send
+> to Log Analytics). The **agent runtime** cost (Azure Agent Units — fixed always-on + token-based
+> active flow) and data-residency details are in
+> [AZURE-SRE-AGENT-DATA-RESIDENCY-AND-PRICING.md](AZURE-SRE-AGENT-DATA-RESIDENCY-AND-PRICING.md).
+>
 > **Companion docs:** [AZURE-SRE-AGENT-USE-CASES.md](AZURE-SRE-AGENT-USE-CASES.md) (Azure-native
 > use-case catalog) and [AZURE-SRE-AGENT-DEMO-GUIDE-2026-08-06.md](AZURE-SRE-AGENT-DEMO-GUIDE-2026-08-06.md)
 > (product overview, scope model, and live-demo flow).
