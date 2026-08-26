@@ -8,6 +8,10 @@ Built for the scenario: *"We should have an SRE Agent where it monitors if any
 VM has an open public port. The agent should report it, and if we allow, it
 should block the port."*
 
+> **Demo warm-up:** the recorded security-incident demo (UC12) is driven by the
+> enterprise-operations seed script — run [`demo/Warmup-UC12-SecurityIncident.ps1`](../../demo/Warmup-UC12-SecurityIncident.ps1)
+> from the repo root (restore with `-Cleanup`). See [demo/README.md](../../demo/README.md).
+
 ---
 
 ## What Gets Deployed

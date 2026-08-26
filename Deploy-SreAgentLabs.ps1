@@ -12,6 +12,9 @@ param(
     [string]$ModelProvider = 'Anthropic',
     [ValidateSet('Stop', 'Continue')]
     [string]$OnError = 'Stop',
+    [string]$GitHubRepository,
+    [securestring]$GitHubPat,
+    [switch]$SkipGitHub,
     [switch]$PlanOnly,
     [switch]$Yes
 )
@@ -121,6 +124,44 @@ function Assert-Command([string]$Name) {
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
         throw "Required command '$Name' was not found in PATH."
     }
+}
+
+function Resolve-GitHubContext {
+    param([pscustomobject]$Plan)
+
+    $gitHubLabs = @($Plan.DeployableLabs | Where-Object { $_.PSObject.Properties.Name -contains 'needsGitHub' -and $_.needsGitHub })
+    if ($gitHubLabs.Count -eq 0) { return $null }
+
+    if ($SkipGitHub) {
+        Write-Section 'GitHub integration'
+        Write-Host 'Skipping GitHub setup (-SkipGitHub). Complete the OAuth/repo steps from each lab README afterwards.' -ForegroundColor Yellow
+        return $null
+    }
+
+    Write-Section 'GitHub integration'
+    Write-Host ("These labs use GitHub: {0}" -f (($gitHubLabs.id) -join ', '))
+    Write-Host 'starter-lab wires GitHub Actions deployment (gh CLI + OIDC); deployment-compliance connects a code repo (OAuth).' -ForegroundColor DarkGray
+
+    $repository = $GitHubRepository
+    if (-not $repository -and -not $Yes) {
+        $repository = (Read-Host 'GitHub repository as owner/repo (press Enter to skip and configure later)').Trim()
+    }
+    if ($repository -and $repository -notmatch '^[^/\s]+/[^/\s]+$') {
+        throw "GitHub repository '$repository' must be in owner/repo form."
+    }
+
+    $pat = $GitHubPat
+    if (-not $pat -and -not $Yes) {
+        Write-Host 'Optional: paste a GitHub PAT to authenticate the gh CLI non-interactively (used only for this run, never stored).' -ForegroundColor DarkGray
+        $pat = Read-Host 'GitHub PAT (press Enter to use browser/gh login instead)' -AsSecureString
+    }
+
+    $plainPat = $null
+    if ($pat -and $pat.Length -gt 0) {
+        $plainPat = [System.Net.NetworkCredential]::new('', $pat).Password
+    }
+
+    return [pscustomobject]@{ Repository = $repository; Pat = $plainPat }
 }
 
 function Get-BashCommand {
@@ -254,6 +295,8 @@ if ($plan.Scenarios.number -contains 13 -and (-not $TargetSubscriptionIds -or $T
     if ($TargetSubscriptionIds.Count -lt 2) { throw 'Scenario 13 requires at least two target subscription IDs.' }
 }
 
+$gitHubContext = Resolve-GitHubContext -Plan $plan
+
 $azureContext = Get-AzureContext
 Write-Section 'Azure target'
 Write-Host "Subscription: $($azureContext.SubscriptionName) ($($azureContext.SubscriptionId))"
@@ -266,15 +309,40 @@ if (-not $Yes) {
 }
 
 $failures = [System.Collections.Generic.List[string]]::new()
-foreach ($lab in $plan.DeployableLabs) {
-    if (-not $PSCmdlet.ShouldProcess("$($azureContext.SubscriptionName)/$($lab.id)", 'Deploy Azure lab')) { continue }
-    try {
-        Invoke-LabDeployment -Lab $lab -AzureContext $azureContext
+
+$gitHubEnvKeys = @('GH_TOKEN', 'GITHUB_TOKEN', 'GITHUB_REPOSITORY')
+$gitHubEnvBackup = @{}
+foreach ($key in $gitHubEnvKeys) { $gitHubEnvBackup[$key] = [Environment]::GetEnvironmentVariable($key) }
+
+try {
+    if ($gitHubContext) {
+        if ($gitHubContext.Repository) {
+            $env:GITHUB_REPOSITORY = $gitHubContext.Repository
+            Write-Host "GitHub repository for this run: $($gitHubContext.Repository)" -ForegroundColor DarkGray
+        }
+        if ($gitHubContext.Pat) {
+            # In-process only so the gh CLI can authenticate non-interactively; never persisted to azd env.
+            $env:GH_TOKEN = $gitHubContext.Pat
+            $env:GITHUB_TOKEN = $gitHubContext.Pat
+            Write-Host 'GitHub PAT applied to this session (gh CLI will use it; value is not stored).' -ForegroundColor DarkGray
+        }
     }
-    catch {
-        $failures.Add("$($lab.id): $($_.Exception.Message)")
-        Write-Error -ErrorAction Continue "Deployment failed for $($lab.id): $($_.Exception.Message)"
-        if ($OnError -eq 'Stop') { break }
+
+    foreach ($lab in $plan.DeployableLabs) {
+        if (-not $PSCmdlet.ShouldProcess("$($azureContext.SubscriptionName)/$($lab.id)", 'Deploy Azure lab')) { continue }
+        try {
+            Invoke-LabDeployment -Lab $lab -AzureContext $azureContext
+        }
+        catch {
+            $failures.Add("$($lab.id): $($_.Exception.Message)")
+            Write-Error -ErrorAction Continue "Deployment failed for $($lab.id): $($_.Exception.Message)"
+            if ($OnError -eq 'Stop') { break }
+        }
+    }
+}
+finally {
+    foreach ($key in $gitHubEnvKeys) {
+        [Environment]::SetEnvironmentVariable($key, $gitHubEnvBackup[$key])
     }
 }
 

@@ -22,6 +22,7 @@
       "path": "labs/starter-lab",
       "azdCommand": "up",
       "postDeploy": "bash:scripts/post-provision.sh",
+      "needsGitHub": true,
       "warning": "Deploys Container Apps, Container Registry, Log Analytics, Application Insights, and an SRE Agent."
     },
     {
@@ -46,6 +47,7 @@
       "path": "labs/deployment-compliance",
       "azdCommand": "up",
       "postDeploy": "bash:scripts/post-deploy.sh",
+      "needsGitHub": true,
       "warning": "Deploys Container Apps, Container Registry, Azure SQL Database, monitoring resources, and an SRE Agent."
     },
     {

@@ -8,6 +8,12 @@
 
 > **Companion:** For the Azure-native use-case catalog (13 scenarios mapped to labs and Azure data sources), see [AZURE-SRE-AGENT-USE-CASES.md](AZURE-SRE-AGENT-USE-CASES.md). This guide and that catalog are **Azure-centric**; third-party and on-premises scenarios are parked under [`archive/`](archive/) and discussed separately.
 
+> **Deploy & record fast:** Provision the labs with [`Deploy-SreAgentLabs.ps1`](Deploy-SreAgentLabs.ps1)
+> (interactive scenario picker, cost/readiness warnings, and GitHub prompts for the connected labs).
+> Then use the one-command warm-up scripts in [`demo/`](demo/) — one per use case — to seed each
+> incident and print the exact prompt. The full recording script is in
+> [SRE-AGENT-DEMO-RUNBOOK.md](SRE-AGENT-DEMO-RUNBOOK.md).
+
 ## Executive takeaway
 
 Azure SRE Agent is not just a chatbot over Azure Monitor. It is an agentic operations service that can reason across signals, call tools, run investigations, retain operational context, route work to specialists, and take approved actions.

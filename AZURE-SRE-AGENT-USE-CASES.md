@@ -10,6 +10,11 @@ for this phase** — they are discussed separately and their parked assets live 
 >
 > Per-use-case architecture, implementation, findings, hypotheses, and acceptance criteria:
 > [labs/enterprise-operations/docs/use-case-implementation-guide.md](labs/enterprise-operations/docs/use-case-implementation-guide.md).
+>
+> **To demo these scenarios:** deploy the labs with [`Deploy-SreAgentLabs.ps1`](Deploy-SreAgentLabs.ps1),
+> then run the matching one-command warm-up script in [`demo/`](demo/) (one per use case) to seed the
+> incident and print the exact prompt. See [demo/README.md](demo/README.md) and the
+> [demo runbook](SRE-AGENT-DEMO-RUNBOOK.md).
 
 ## How to read this catalog
 

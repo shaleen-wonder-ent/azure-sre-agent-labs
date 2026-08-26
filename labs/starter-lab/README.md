@@ -2,6 +2,9 @@
 
 Deploy an Azure SRE Agent, break a sample app, and watch it diagnose and fix the issue. **~40 minutes.**
 
+> **Demo warm-up:** after deploying, run [`demo/Warmup-UC14-OomToPr.ps1`](../../demo/Warmup-UC14-OomToPr.ps1)
+> from the repo root to induce the OOM incident (UC14). See [demo/README.md](../../demo/README.md).
+
 ## Architecture
 
 <p align="center">

@@ -9,6 +9,10 @@ For the complete resource decisions, implementation sequence, and step-by-step S
 for every use case, see the
 [Enterprise Operations Use-Case Guide](docs/use-case-implementation-guide.md).
 
+> **Demo warm-up:** this overlay hosts UC4 and UC6–UC13. Run the one-time setup with
+> [`demo/Invoke-OneTimeSetup.ps1`](../../demo/Invoke-OneTimeSetup.ps1), then warm up each demo with the
+> matching `demo/Warmup-UC*.ps1` script. See [demo/README.md](../../demo/README.md).
+
 > Status: Terraform implementation complete and locally validated. The overlay still requires a
 > deployed Zava workload and an environment-specific Azure `plan` before it can be applied.
 

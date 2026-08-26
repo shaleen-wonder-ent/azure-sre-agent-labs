@@ -2,6 +2,12 @@
 
 A recording-ready script for all 14 use cases. You run the **Setup** command(s) in PowerShell, paste the **Prompt** into the SRE Agent chat (start a **new thread** each time), and record the **Highlight**.
 
+> **Automated warm-up:** every use case below has a one-command wrapper in [`demo/`](demo/) that runs
+> the setup, waits for ingestion where needed, and prints the exact prompt — e.g.
+> `pwsh ./demo/Warmup-UC06-ResourceLifecycle.ps1`. The one-time setup block is wrapped by
+> `pwsh ./demo/Invoke-OneTimeSetup.ps1`. The manual commands in the table still work; the wrappers
+> just make them consistent and hard to get wrong. See [demo/README.md](demo/README.md).
+
 > Convention: `EO agent` = the enterprise-operations agent that hosts use cases 4 and 6–13.
 > Use cases 1, 2, 3, 5, 14 run on their own lab agents (each lab deploys its own SRE Agent).
 
@@ -15,6 +21,9 @@ A recording-ready script for all 14 use cases. You run the **Setup** command(s) 
 | `labs/starter-lab` | 14 | `sre-agent-tlwg3rnc5h6pm` — https://sre-agent-tlwg3rnc5h6pm--9baa2d20.bc75887b.eastus2.azuresre.ai |
 
 ## One-time setup (do this ONCE before recording — not between demos)
+
+> Shortcut: `pwsh ./demo/Invoke-OneTimeSetup.ps1` runs all of the commands below in order.
+> Add `-IncludeGrubifyGitHub` to also wire the UC14 Grubify GitHub deployment.
 
 ```powershell
 cd labs\enterprise-operations
@@ -41,6 +50,16 @@ After this, UC 8, 9, 11, 13 need **no per-demo setup**. UC 4, 6, 7, 10, 12 need 
 ## The 14 demos
 
 All EO commands assume `cd labs\enterprise-operations`. Replace `<BLOCKED>`/`<BLOCKER>` in UC4 with the session IDs printed by Diagnose.
+
+> **Warm-up script per use case** (run from the repo root; prints the prompt for you):
+> UC1 `demo/Warmup-UC01-AppOutage.ps1` · UC2 `demo/Warmup-UC02-Connectivity.ps1` ·
+> UC3 `demo/Warmup-UC03-VmIncident.ps1` · UC4 `demo/Warmup-UC04-SqlMiPerformance.ps1` ·
+> UC5 `demo/Warmup-UC05-VmAvailability.ps1` · UC6 `demo/Warmup-UC06-ResourceLifecycle.ps1` ·
+> UC7 `demo/Warmup-UC07-ChangeDigest.ps1` · UC8 `demo/Warmup-UC08-EntraAuth.ps1` ·
+> UC9 `demo/Warmup-UC09-CapacityForecast.ps1` · UC10 `demo/Warmup-UC10-FailedDeployment.ps1` ·
+> UC11 `demo/Warmup-UC11-CostAnomaly.ps1` · UC12 `demo/Warmup-UC12-SecurityIncident.ps1` ·
+> UC13 `demo/Warmup-UC13-FleetHealth.ps1` · UC14 `demo/Warmup-UC14-OomToPr.ps1`.
+
 
 | # | Use case | Agent / target | Setup (you run in PowerShell) | Prompt to paste in SRE Agent (new thread) | Highlight in output |
 |---|----------|----------------|-------------------------------|-------------------------------------------|---------------------|
@@ -98,6 +117,10 @@ The default run sends 200 cart requests at 0.5-second intervals. On the vulnerab
 ---
 
 ## Reset / cleanup (after recording)
+
+> The warm-up wrappers expose the same resets: `demo/Warmup-UC04-SqlMiPerformance.ps1 -Reset`,
+> `demo/Warmup-UC12-SecurityIncident.ps1 -Cleanup`, and `demo/Warmup-UC06-ResourceLifecycle.ps1 -Cleanup`
+> (clears the shared UC6/7/10 seed group).
 
 ```powershell
 cd labs\enterprise-operations

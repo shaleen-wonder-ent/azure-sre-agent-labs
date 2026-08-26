@@ -10,6 +10,11 @@ Teams deploy Container Apps through multiple channels — CI/CD pipelines, Azure
 
 An SRE Agent skill that continuously monitors Activity Logs, classifies every Container App deployment by caller identity (`claims.appid`), and flags non-compliant changes. The agent can recommend — and with user approval — revert unauthorized deployments.
 
+> **Demo warm-up:** the recorded change/compliance demos (UC6, UC7, UC10) are driven by the
+> enterprise-operations seed scripts — run [`demo/Warmup-UC06-ResourceLifecycle.ps1`](../../demo/Warmup-UC06-ResourceLifecycle.ps1),
+> [`demo/Warmup-UC07-ChangeDigest.ps1`](../../demo/Warmup-UC07-ChangeDigest.ps1), or
+> [`demo/Warmup-UC10-FailedDeployment.ps1`](../../demo/Warmup-UC10-FailedDeployment.ps1). See [demo/README.md](../../demo/README.md).
+
 ## Architecture
 
 <p align="center">

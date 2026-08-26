@@ -15,7 +15,8 @@ to the smallest set of lab packages. It accepts `all` or a comma-separated selec
 shared labs, displays cost and readiness warnings, and requires confirmation before provisioning.
 
 Prerequisites: PowerShell 7, Azure CLI, Azure Developer CLI, Git Bash on Windows, Python 3, an
-Azure subscription, and sufficient permissions to create resources and role assignments.
+Azure subscription, and sufficient permissions to create resources and role assignments. The
+GitHub-connected labs additionally use the GitHub CLI (`gh`).
 
 ```powershell
 # Preview only; makes no Azure changes
@@ -39,6 +40,42 @@ pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios 13 `
 
 The launcher validates that every target subscription belongs to the active tenant. Cross-tenant
 Azure Lighthouse onboarding is intentionally outside this lab's scenario 13 scope.
+
+### GitHub-connected labs
+
+The `starter-lab` (GitHub Actions deployment for the OOM→PR demo) and `deployment-compliance`
+(connected code repository) labs use GitHub. When you select either one, the launcher asks for a
+`owner/repo` repository and an **optional** GitHub PAT. The PAT is applied to the `gh` CLI for that
+run only (`GH_TOKEN`) and is never written to the azd environment. You can also pass them up front:
+
+```powershell
+pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios '1,6' `
+	-GitHubRepository 'my-org/grubify' `
+	-GitHubPat (Read-Host 'GitHub PAT' -AsSecureString)
+
+# Or skip GitHub setup entirely and wire it later from each lab README
+pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios '1,6' -SkipGitHub
+```
+
+---
+
+## Warm up and record the demos
+
+After a lab is deployed, the [`demo/`](demo/) folder has **one PowerShell warm-up script per use
+case**. Each script checks prerequisites, injects the fault or seeds the incident, and prints the
+exact prompt to paste into the agent (in a new thread). Run the one-time setup once, then warm up
+each demo right before recording:
+
+```powershell
+# One-time agent configuration + dataset skills (run once before recording)
+pwsh ./demo/Invoke-OneTimeSetup.ps1              # add -IncludeGrubifyGitHub for the UC14 GitHub flow
+
+# Warm up a specific demo — seeds the incident and prints the prompt
+pwsh ./demo/Warmup-UC06-ResourceLifecycle.ps1
+```
+
+See [demo/README.md](demo/README.md) for the full list and the reset/cleanup commands, and
+[SRE-AGENT-DEMO-RUNBOOK.md](SRE-AGENT-DEMO-RUNBOOK.md) for the per-use-case prompts and highlights.
 
 ---
 

@@ -8,6 +8,10 @@ faults — across the **network/edge** and the **application** tiers — using *
 > The platform deploys healthy. Faults are injected on demand by the chaos scripts / demo simulator,
 > so the SRE Agent has a real, observable problem to investigate.
 
+> **Demo warm-up:** after deploying, run [`demo/Warmup-UC01-AppOutage.ps1`](../../demo/Warmup-UC01-AppOutage.ps1)
+> (UC1) or [`demo/Warmup-UC02-Connectivity.ps1`](../../demo/Warmup-UC02-Connectivity.ps1) (UC2) from the
+> repo root to inject the fault and print the prompt. See [demo/README.md](../../demo/README.md).
+
 ---
 
 ## What gets deployed
