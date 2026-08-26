@@ -344,9 +344,9 @@ Illustrative documented scenarios at public US list pricing:
 
 | Scenario | Claude Opus 4.6 | GPT 5.3 Codex |
 |---|---:|---:|
-| Quick question | ~3.8 AAUs / **$0.38** | ~1.3 AAUs / **$0.13** |
-| Incident investigation | ~35.3 AAUs / **$3.53** | ~11.7 AAUs / **$1.17** |
-| Full remediation | ~86.5 AAUs / **$8.65** | ~30.1 AAUs / **$3.01** |
+| Quick question | ≈3.8 AAUs / **$0.38** | ≈1.3 AAUs / **$0.13** |
+| Incident investigation | ≈35.3 AAUs / **$3.53** | ≈11.7 AAUs / **$1.17** |
+| Full remediation | ≈86.5 AAUs / **$8.65** | ≈30.1 AAUs / **$3.01** |
 
 These are examples, not fixed task prices. Actual use depends on context size, task complexity, reasoning steps, tool results, caching, and the configured provider.
 

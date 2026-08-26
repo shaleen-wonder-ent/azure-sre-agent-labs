@@ -108,7 +108,7 @@ regardless of whether it is actively working.
 
 | Component | Rate | Listed example |
 |---|---|---|
-| Always-on flow | **4 AAUs per agent-hour** | ~$0.10 per AAU → **~$0.40 per hour, per agent** |
+| Always-on flow | **4 AAUs per agent-hour** | ≈$0.10 per AAU → **≈$0.40 per hour, per agent** |
 
 New customers can [evaluate SRE Agent](https://aka.ms/sre-agent-trial) with the **always-on cost waived**.
 
@@ -155,16 +155,16 @@ your agent's settings and on the pricing page.)*
 
 | Scenario | Claude Opus 4.6 | GPT 5.3 Codex |
 |---|---:|---:|
-| Quick question ("show me recent alerts") | ~3.8 | ~1.3 |
-| Incident investigation (automated from Azure Monitor) | ~35.3 | ~11.7 |
-| Full remediation ("diagnose and fix the failing deployment") | ~86.5 | ~30.1 |
+| Quick question ("show me recent alerts") | ≈3.8 | ≈1.3 |
+| Incident investigation (automated from Azure Monitor) | ≈35.3 | ≈11.7 |
+| Full remediation ("diagnose and fix the failing deployment") | ≈86.5 | ≈30.1 |
 
 ### 3.3 End-to-end example — "report all under-utilized VMs"
 
 > **Prompt:** *"Generate a report of all under-utilized VMs in the subscription over the last 30 days."*
 
 **The important part:** active flow is metered on the **tokens** the task consumes — **not** on the
-~3 minutes it runs. A longer run costs more only if it does more work (more tool calls / more data =
+roughly 3 minutes it runs. A longer run costs more only if it does more work (more tool calls / more data =
 more tokens). Time the agent spends **waiting for your approval is never billed**.
 
 This is a read-only **investigation + report** task (the agent plans, runs several metric / Resource
@@ -177,18 +177,18 @@ Microsoft's *incident-investigation* example. Illustrative token counts and the 
 | Output (the report + reasoning) | 15K | 500 | 7.50 | 280 | 4.20 |
 | Cache read (repeated context) | 150K | 10 | 1.50 | 3.5 | 0.53 |
 | Cache write (context cached for reuse) | 50K | 125 | 6.25 | 0 | 0.00 |
-| **Active-flow total** | | | **~35.3 AAU** | | **~11.7 AAU** |
+| **Active-flow total** | | | **≈35.3 AAU** | | **≈11.7 AAU** |
 
-**Turn AAU into money** (using the ~$0.10/AAU listed example — confirm your region/currency):
+**Turn AAU into money** (using the ≈$0.10/AAU listed example — confirm your region/currency):
 
 | | Claude Opus 4.6 | GPT 5.3 Codex |
 |---|---:|---:|
-| Active flow (this one task) | ~35.3 AAU → **~$3.53** | ~11.7 AAU → **~$1.17** |
-| Always-on during the ~3-min run | 4 AAU/hr × 0.05 hr = 0.2 AAU → **~$0.02** | ~$0.02 |
+| Active flow (this one task) | ≈35.3 AAU → **≈$3.53** | ≈11.7 AAU → **≈$1.17** |
+| Always-on during the ≈3-min run | 4 AAU/hr × 0.05 hr = 0.2 AAU → **≈$0.02** | ≈$0.02 |
 
-The always-on charge (4 AAU/hr) accrues in the background whether or not you run this task — the ~$0.02
+The always-on charge (4 AAU/hr) accrues in the background whether or not you run this task — the ≈$0.02
 above is just the slice that overlaps the run. So the **marginal cost of this report ≈ its active-flow
-figure** (~$3.5 on Opus, ~$1.2 on GPT). Run it as a **scheduled task** with a VM-rightsizing skill to
+figure** (≈$3.5 on Opus, ≈$1.2 on GPT). Run it as a **scheduled task** with a VM-rightsizing skill to
 keep the agent grounded and concise, which trims tokens on every run.
 
 ### 3.4 Estimating your monthly cost

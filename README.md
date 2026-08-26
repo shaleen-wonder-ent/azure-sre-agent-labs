@@ -183,7 +183,7 @@ region**. Key transparency facts:
 (**4 AAU/agent-hour**, until the agent is deleted) **plus** a variable **active-flow** charge metered
 from LLM tokens (input/output/cache) — billed on **tokens consumed while actively working, not on how
 long a query runs** (waiting for your approval is free). The full doc has a worked example (e.g. an
-"under-utilized VMs" report ≈ 35 AAU on Claude Opus 4.6, ~$3.5 at the listed rate).
+"under-utilized VMs" report ≈ 35 AAU on Claude Opus 4.6, ≈$3.5 at the listed rate).
 
 ➡️ Full detail — supported regions list, what is/isn't stored, the token→AAU formula, model rates, and
 cost controls: **[Regions, Data Residency & Pricing](archive/reference/AZURE-SRE-AGENT-DATA-RESIDENCY-AND-PRICING.md)**.
