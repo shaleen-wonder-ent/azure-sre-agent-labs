@@ -144,7 +144,7 @@ function Resolve-GitHubContext {
 
     $repository = $GitHubRepository
     if (-not $repository -and -not $Yes) {
-        $repository = (Read-Host 'GitHub repository as owner/repo (press Enter to skip and configure later)').Trim()
+        $repository = (Read-Host 'GitHub repository as owner/repo (e.g., shaleen-wonder-ent/grubify) (press Enter to skip and configure later)').Trim()
     }
     if ($repository -and $repository -notmatch '^[^/\s]+/[^/\s]+$') {
         throw "GitHub repository '$repository' must be in owner/repo form."
