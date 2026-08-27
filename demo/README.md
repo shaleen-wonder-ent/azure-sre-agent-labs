@@ -52,6 +52,159 @@ Each warm-up script verifies its own tools and Azure sign-in before doing anythi
 
 Paste the printed prompt into the SRE Agent in a **new thread**, then record the highlight.
 
+## Sample deployment output
+
+The following transcript shows a successful `starter-lab` deployment. Values entered by
+the operator are called out between output blocks. Subscription details, tenant IDs,
+generated resource names, endpoints, and credentials are sanitized.
+
+<details>
+<summary>Expand sanitized deployment transcript</summary>
+
+```text
+PS C:\path\to\azure-sre-agent-labs> pwsh ./Deploy-SreAgentLabs.ps1
+
+== Available scenarios ==
+ 1. Application outage root cause analysis [deployable]
+ 2. Connectivity diagnostics: hub to spoke to internet [deployable]
+ 3. VM and infrastructure incident investigation [deployable]
+ 4. Azure SQL Managed Instance performance analysis [guided setup]
+ 5. VM availability report (past 30 days) [deployable]
+ 6. Services or resources added or removed (past week) [deployable]
+ 7. Show everything changed in last 24 hours [deployable]
+ 8. Entra authentication troubleshooting [guided setup]
+ 9. Capacity exhaustion prediction [deployable]
+10. Failed deployment investigation [deployable]
+11. Azure cost anomaly detection [deployable]
+12. Security incident investigation [deployable]
+13. Multi-subscription operational health overview [guided setup]
+Enter 'all' or comma-separated scenario numbers (for example 2,4,7,10):
+```
+
+> **Operator input:** `1`
+
+```text
+== Selected use cases ==
+ 1. Application outage root cause analysis -> starter-lab (deployable)
+
+== Unique lab packages ==
+DEPLOY  starter-lab
+				Deploys Container Apps, Container Registry, Log Analytics, Application Insights, and an SRE Agent.
+
+== GitHub integration ==
+These labs use GitHub: starter-lab
+starter-lab wires GitHub Actions deployment (gh CLI + OIDC); deployment-compliance connects a code repo (OAuth).
+GitHub repository as owner/repo (e.g., shaleen-wonder-ent/grubify) (press Enter to skip and configure later):
+```
+
+> **Operator input:** `shaleen-wonder-ent/grubify`
+
+```text
+Optional: paste a GitHub PAT to authenticate the gh CLI non-interactively (used only for this run, never stored).
+GitHub PAT (press Enter to use browser/gh login instead):
+```
+
+> **Operator input:** Press Enter. No PAT was entered or captured.
+
+```text
+== Azure target ==
+Subscription: [REDACTED-SUBSCRIPTION-NAME] ([REDACTED-SUBSCRIPTION-ID])
+Tenant:       [REDACTED-TENANT-ID]
+Type DEPLOY to provision the listed resources:
+```
+
+> **Operator input:** `DEPLOY`
+
+```text
+GitHub repository for this run: shaleen-wonder-ent/grubify
+
+== Deploying starter-lab ==
+
+Packaging services (azd package)
+
+Provisioning Azure resources (azd provision)
+Provisioning Azure resources can take some time.
+
+Subscription: [REDACTED-SUBSCRIPTION-NAME] ([REDACTED-SUBSCRIPTION-ID])
+Location: East US 2
+
+	(✓) Done: Resource group: rg-srelab-starter
+	(✓) Done: Log Analytics workspace: law-[RESOURCE-SUFFIX]
+	(✓) Done: Application Insights: appi-[RESOURCE-SUFFIX]
+	(✓) Done: Container Registry: acrcagrubify[RESOURCE-SUFFIX]
+	(✓) Done: Container Apps Environment: cae-[RESOURCE-SUFFIX]
+	(✓) Done: Container App: ca-grubify-[RESOURCE-SUFFIX]
+	(✓) Done: Container App: ca-grubify-fe-[RESOURCE-SUFFIX]
+	(✓) Done: SRE Agent: sre-agent-[RESOURCE-SUFFIX]
+
+Deploying services (azd deploy)
+
+SUCCESS: Your up workflow to provision and deploy to Azure completed.
+
+=============================================
+	SRE Agent Lab - Post-Provision Setup
+=============================================
+
+Agent: https://[REDACTED-SRE-AGENT-ENDPOINT]
+Resource group: rg-srelab-starter
+
+Step 0/5: Building Grubify container images in ACR...
+	 Built: acrcagrubify[RESOURCE-SUFFIX].azurecr.io/grubify-api:latest
+	 API deployed: https://[REDACTED-API-ENDPOINT]
+	 Frontend built
+	 Frontend deployed: https://[REDACTED-FRONTEND-ENDPOINT]
+	 CORS configured
+
+Step 1/5: Uploading knowledge base...
+	 Uploaded: github-issue-triage.md grubify-architecture.md http-500-errors.md incident-report-template.md
+
+Step 2/5: Creating/updating incident-handler subagent...
+	 Using full config with GitHub tools
+	 Skill: grubify-pr-delivery
+	 Created: incident-handler
+	 Created: public-exposure-auditor
+
+Step 3/5: Enabling Azure Monitor incident platform...
+	 Azure Monitor enabled + DevOps & Python tools enabled
+	 Response plan -> incident-handler
+	 Scheduled task: audit-public-exposure (daily at 06:00 UTC -> public-exposure-auditor)
+
+Step 4/5: GitHub integration...
+	 Approval hook: grubify-write-approval
+	 GitHub OAuth connector created
+	 Created: code-analyzer
+	 Created: issue-triager
+	 Scheduled task: triage-grubify-issues (every 12h -> issue-triager)
+	 Code repo: shaleen-wonder-ent/grubify
+	 Created 5 sample customer issues in shaleen-wonder-ent/grubify
+
+=============================================
+	Verifying what was provisioned...
+=============================================
+
+	Knowledge Base: 4 files indexed
+	Subagents: incident-handler, public-exposure-auditor, code-analyzer, issue-triager
+	Connectors: app-insights, log-analytics, azure-monitor, github
+	Response Plans: grubify-http-errors -> incident-handler
+	Incident Platform: Azure Monitor
+	Scheduled Tasks: triage-grubify-issues, audit-public-exposure
+
+=============================================
+	SRE Agent Lab Setup Complete!
+=============================================
+
+	Agent Portal:  https://sre.azure.com
+	Agent API:     https://[REDACTED-SRE-AGENT-ENDPOINT]
+	Grubify API:   https://[REDACTED-API-ENDPOINT]
+	Grubify UI:    https://[REDACTED-FRONTEND-ENDPOINT]
+	Resource Group: rg-srelab-starter
+
+== Deployment summary ==
+All automated lab deployments completed. Review any guided enterprise steps above.
+```
+
+</details>
+
 ## Common parameters
 
 Most warm-up scripts accept:
