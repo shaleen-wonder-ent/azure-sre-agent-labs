@@ -63,6 +63,9 @@ pwsh ./Deploy-SreAgentLabs.ps1
 pwsh ./Deploy-SreAgentLabs.ps1 -Scenarios '1,6,12'
 ```
 
+See a [sanitized sample deployment output](demo/README.md#sample-deployment-output), including the
+interactive inputs and the resources configured by a successful `starter-lab` deployment.
+
 **New to this?** Start with **use case 1** only — it's the smallest, cheapest lab:
 
 ```powershell
